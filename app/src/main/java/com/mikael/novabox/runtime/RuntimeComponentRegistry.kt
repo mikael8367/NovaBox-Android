@@ -6,7 +6,8 @@ enum class RuntimeComponentState {
     INSTALLED,
     NOT_INSTALLED,
     INCOMPLETE,
-    UNSUPPORTED_DEVICE
+    UNSUPPORTED_DEVICE,
+    BLOCKED
 }
 
 data class RuntimeComponentStatus(
@@ -35,7 +36,7 @@ object RuntimeComponentRegistry {
     val all: List<RuntimeComponentDefinition> = listOf(
         RuntimeComponentDefinition(
             RuntimeId.WINE, "Compatibilidade com aplicativos Windows",
-            listOf(RuntimeId.BOX64, RuntimeId.BOX86),
+            emptyList(),
             listOf(listOf("bin/wine")), setOf("bin/wine"), arm64
         ),
         RuntimeComponentDefinition(
