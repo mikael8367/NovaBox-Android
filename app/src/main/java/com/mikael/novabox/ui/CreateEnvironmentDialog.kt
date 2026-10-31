@@ -363,7 +363,7 @@ fun CreateEnvironmentDialog(
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("Configurações avançadas", color = NovaText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("Áudio, mouse, DXVK, Wine e variáveis", color = NovaMuted, fontSize = 10.sp)
+                    Text("Desempenho, tela, Windows, Android, entrada e compatibilidade", color = NovaMuted, fontSize = 10.sp)
                 }
                 Icon(if (advanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null, tint = NovaGreen)
             }
@@ -432,7 +432,6 @@ fun CreateEnvironmentDialog(
                     SwitchSetting("Ajustes de registro (perfil)", registryOptimizationsEnabled) { registryOptimizationsEnabled = it }
                     SwitchSetting("Otimização de serviços (perfil)", servicesOptimizationsEnabled) { servicesOptimizationsEnabled = it }
                     SwitchSetting("Escala de DPI alta", highDpiEnabled) { highDpiEnabled = it }
-                    SwitchSetting("Captura automática do mouse", mouseCaptureEnabled) { mouseCaptureEnabled = it }
                     FormLabel("Argumentos de inicialização")
                     OutlinedTextField(
                         value = startupArguments,
