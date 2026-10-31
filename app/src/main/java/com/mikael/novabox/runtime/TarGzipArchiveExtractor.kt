@@ -155,7 +155,7 @@ internal object TarGzipArchiveExtractor {
         ) {
             throw IOException("O pacote contém um caminho absoluto ou inválido.")
         }
-        val parts = path.split('/')
+        val parts = path.removeSuffix("/").split('/')
         if (parts.any { it == "." || it == ".." || it.isEmpty() }) {
             throw IOException("O pacote contém tentativa de sair da pasta de instalação.")
         }
