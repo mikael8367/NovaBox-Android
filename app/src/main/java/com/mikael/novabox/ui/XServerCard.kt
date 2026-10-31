@@ -27,19 +27,27 @@ fun XServerCard() {
     val context = LocalContext.current
     val controller = remember(context) { XServerController(context) }
     var message by remember { mutableStateOf("") }
-    val installed = remember(context) { controller.isInstalled() }
+    var installed by remember(context) { mutableStateOf(controller.isInstalled()) }
 
     Surface(Modifier.fillMaxWidth(), color = NovaPanel, shape = RoundedCornerShape(16.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Servidor gráfico X11", color = NovaText, fontSize = 13.sp)
             Text(
-                if (installed) "Termux:X11 detectado. Abra-o antes de iniciar uma sessão Wine com DISPLAY=:0."
+                if (installed) "Termux:X11 detectado. A tela ainda não está conectada automaticamente ao Wine."
                 else "O servidor gráfico não vem embutido. Instale Termux:X11 separadamente para habilitar uma tela X11.",
                 color = NovaMuted, fontSize = 10.sp, lineHeight = 14.sp
             )
-            Row {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
+                        installed = controller.isInstalled()
+                        message = if (installed) "Termux:X11 foi encontrado." else "Termux:X11 não está instalado."
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NovaPanelRaised)
+                ) { Text("Verificar", color = NovaText, fontSize = 11.sp) }
+                Button(
+                    onClick = {
+                        installed = controller.isInstalled()
                         message = when (controller.launch()) {
                             XServerLaunchResult.OPENED -> "Termux:X11 aberto. Inicie o display :0 no ambiente Termux, se necessário."
                             XServerLaunchResult.NOT_INSTALLED -> "Termux:X11 não está instalado."
