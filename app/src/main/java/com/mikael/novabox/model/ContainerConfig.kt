@@ -79,6 +79,7 @@ object OsCatalog {
         OsProfile("android-14", "Android 14", OsFamily.ANDROID, "14", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
         OsProfile("android-15", "Android 15", OsFamily.ANDROID, "15", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
         OsProfile("android-16", "Android 16", OsFamily.ANDROID, "16", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-x86-32", "Android-x86 32-bit", OsFamily.ANDROID, "9.x", "Projeto Android para arquitetura x86 de 32 bits; imagem compatível necessária.", EngineType.ANDROID_VIRTUALIZATION, "Imagem necessária"),
         OsProfile("android-x86", "Android-x86", OsFamily.ANDROID, "9.x", "Projeto Android para arquitetura x86; exige máquina virtual completa.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
         OsProfile("android-x86-64", "Android-x86 64-bit", OsFamily.ANDROID, "9.x", "Projeto Android para arquitetura x86-64; exige máquina virtual completa.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
         OsProfile("bliss-os", "Bliss OS", OsFamily.ANDROID, "15.x", "Sistema Android para PC em uma máquina virtual.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
