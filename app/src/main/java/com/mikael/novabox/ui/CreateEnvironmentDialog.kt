@@ -231,7 +231,11 @@ fun CreateEnvironmentDialog(
                     EngineType.WINE_COMPATIBILITY -> "Este perfil configura o Wine para aplicativos Windows. Não instala nem inicializa uma cópia completa do Windows."
                     EngineType.LINUX_USERLAND -> "Este perfil foi pensado para um ambiente Linux de usuário via PRoot. Não inicia um kernel ou desktop Linux completo."
                     EngineType.DOS_EMULATION -> "Este sistema depende de um emulador DOS. O motor ainda não foi integrado."
-                    EngineType.ANDROID_VIRTUALIZATION -> "Este perfil cria a configuração de um Android convidado. Para inicializar, ainda precisamos integrar QEMU ou um backend de virtualização compatível e obter uma imagem Android ARM64/x86_64. O desempenho pode ser baixo sem aceleração por hardware."
+                    EngineType.ANDROID_VIRTUALIZATION -> when (selectedProfile.maturity) {
+                        "Port necessário" -> "Esta ROM depende de uma build feita para dispositivo e arquitetura específicos. Uma imagem genérica pode não iniciar. O QEMU e o carregamento da imagem ainda não estão integrados."
+                        "Legado" -> "Este projeto é legado/descontinuado. Você precisará fornecer uma imagem compatível. O QEMU ainda não está integrado."
+                        else -> "Este perfil cria a configuração de um Android convidado. Para inicializar, ainda precisamos integrar QEMU ou um backend compatível e obter uma imagem da mesma arquitetura. O desempenho pode ser baixo sem aceleração por hardware."
+                    }
                     EngineType.FULL_SYSTEM_VIRTUALIZATION -> "Este sistema exige QEMU ou outro virtualizador de máquina completa. Essa integração ainda não existe no app."
                     EngineType.UNSUPPORTED -> "Não há motor de execução configurado para este sistema."
                 },
