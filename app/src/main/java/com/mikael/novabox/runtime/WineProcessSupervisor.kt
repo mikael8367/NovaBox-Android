@@ -15,28 +15,41 @@ object WineProcessSupervisor {
         }
         synchronized(processes) {
             val previous = processes[environmentId]
-            if (previous?.isAlive == true) throw IOException("Já existe um processo Wine ativo neste ambiente.")
+            if (previous?.isAlive == true) {
+                throw IOException("Já existe um processo Wine ativo neste ambiente.")
+            }
             if (previous != null) processes.remove(environmentId, previous)
             val process = create()
             processes[environmentId] = process
             Thread({
-                try { process.waitFor() } catch (_: InterruptedException) {
+                try {
+                    process.waitFor()
+                } catch (_: InterruptedException) {
                     Thread.currentThread().interrupt()
-                } finally { processes.remove(environmentId, process) }
-            }, "NovaBox-Wine-" + environmentId.take(24)).apply { isDaemon = true; start() }
+                } finally {
+                    processes.remove(environmentId, process)
+                }
+            }, "NovaBox-Wine-" + environmentId.take(24)).apply {
+                isDaemon = true
+                start()
+            }
             return process
         }
     }
 
-    fun isRunning(environmentId: String): Boolean = processes[environmentId]?.isAlive == true
-    fun activeEnvironmentIds(): Set<String> = processes.entries.filter { it.value.isAlive }.map { it.key }.toSet()
+    fun isRunning(environmentId: String): Boolean =
+        processes[environmentId]?.isAlive == true
+
+    fun activeEnvironmentIds(): Set<String> =
+        processes.entries.filter { it.value.isAlive }.map { it.key }.toSet()
 
     fun stop(environmentId: String, timeoutMillis: Long = 1_500L): Boolean {
         require(timeoutMillis >= 0L) { "Tempo limite inválido." }
         val process = processes[environmentId] ?: return false
-        if (!process.isAlive) { processes.remove(environmentId, process); return true }
-        // Capture and stop Wine helpers before the Box64 root can exit and orphan them.
-        runCatching { WineProcessTree.terminateDescendants(process.pid().toInt()) }
+        if (!process.isAlive) {
+            processes.remove(environmentId, process)
+            return true
+        }
         process.destroy()
         try {
             if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
@@ -46,7 +59,9 @@ object WineProcessSupervisor {
         } catch (_: InterruptedException) {
             process.destroyForcibly()
             Thread.currentThread().interrupt()
-        } finally { if (!process.isAlive) processes.remove(environmentId, process) }
+        } finally {
+            if (!process.isAlive) processes.remove(environmentId, process)
+        }
         return !process.isAlive
     }
 
