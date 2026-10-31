@@ -46,8 +46,8 @@ fun XServerCard() {
                     onClick = {
                         installed = controller.isInstalled()
                         termuxInstalled = controller.isTermuxInstalled()
-                        message = "Termux: " + if (termuxInstalled) "detectado" else "não encontrado" +
-                            " • Termux:X11: " + if (installed) "detectado" else "não encontrado"
+                        message = "Termux: " + (if (termuxInstalled) "detectado" else "não encontrado") +
+                            " • Termux:X11: " + (if (installed) "detectado" else "não encontrado")
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = NovaPanelRaised)
                 ) { Text("Verificar", color = NovaText, fontSize = 11.sp) }
