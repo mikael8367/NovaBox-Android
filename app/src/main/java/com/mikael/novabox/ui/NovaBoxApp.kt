@@ -82,6 +82,7 @@ import com.mikael.novabox.model.OsFamily
 import com.mikael.novabox.model.RuntimeId
 import com.mikael.novabox.runtime.EngineAvailability
 import com.mikael.novabox.runtime.RuntimeEngine
+import com.mikael.novabox.runtime.WineProcessSupervisor
 import com.mikael.novabox.runtime.WineRuntimeLauncher
 import com.mikael.novabox.runtime.WineWorkspaceManager
 import com.mikael.novabox.runtime.WineWorkspaceStatus
