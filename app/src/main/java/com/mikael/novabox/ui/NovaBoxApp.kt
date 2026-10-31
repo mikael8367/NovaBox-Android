@@ -56,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -79,6 +80,8 @@ import com.mikael.novabox.model.OsFamily
 import com.mikael.novabox.model.RuntimeId
 import com.mikael.novabox.runtime.EngineAvailability
 import com.mikael.novabox.runtime.RuntimeEngine
+import com.mikael.novabox.runtime.WineWorkspaceManager
+import com.mikael.novabox.runtime.WineWorkspaceStatus
 
 private enum class MainTab(val title: String, val icon: ImageVector) {
     HOME("Início", Icons.Default.Home),
@@ -93,6 +96,7 @@ fun NovaBoxApp() {
     val context = LocalContext.current
     val repository = remember { ContainerRepository(context) }
     val runtimeEngine = remember { RuntimeEngine(context) }
+    val wineWorkspaceManager = remember { WineWorkspaceManager(context) }
     val programRepository = remember { ProgramRepository(context) }
     val programs = remember {
         mutableStateListOf<ProgramEntry>().apply { addAll(programRepository.load()) }
@@ -126,6 +130,11 @@ fun NovaBoxApp() {
     }
     val containers = remember {
         mutableStateListOf<ContainerConfig>().apply { addAll(repository.load()) }
+    }
+    val workspaceStatuses = remember {
+        mutableStateMapOf<String, WineWorkspaceStatus>().apply {
+            containers.forEach { config -> put(config.id, wineWorkspaceManager.inspect(config)) }
+        }
     }
 
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
@@ -193,6 +202,13 @@ fun NovaBoxApp() {
                                         val deletedIds = deletionResults.filter { it.second }.map { it.first }.toSet()
                                         programs.removeAll { it.id in deletedIds }
                                         if (deletionResults.all { it.second }) {
+                                            val workspaceRemoved = withContext(Dispatchers.IO) {
+                                                wineWorkspaceManager.delete(config.id)
+                                            }
+                                            if (!workspaceRemoved) {
+                                                Toast.makeText(context, "Não foi possível remover a estrutura privada do ambiente.", Toast.LENGTH_LONG).show()
+                                            }
+                                            workspaceStatuses.remove(config.id)
                                             containers.removeAll { item -> item.id == config.id }
                                             repository.save(containers)
                                         } else {
@@ -209,6 +225,16 @@ fun NovaBoxApp() {
                             MainTab.PROGRAMS -> ProgramsScreen(
                                 containers = containers,
                                 programs = programs,
+                                workspaceStatuses = workspaceStatuses,
+                                onPrepareWorkspace = { config ->
+                                    scope.launch {
+                                        val status = withContext(Dispatchers.IO) {
+                                            wineWorkspaceManager.prepare(config)
+                                        }
+                                        workspaceStatuses[config.id] = status
+                                        Toast.makeText(context, status.message, Toast.LENGTH_LONG).show()
+                                    }
+                                },
                                 onImport = { config ->
                                     pendingProgramContainer = config
                                     programPicker.launch(arrayOf("*/*"))
