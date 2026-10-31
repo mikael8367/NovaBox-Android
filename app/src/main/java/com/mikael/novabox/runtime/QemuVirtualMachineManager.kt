@@ -2,7 +2,6 @@ package com.mikael.novabox.runtime
 
 import android.app.ActivityManager
 import android.content.Context
-import android.os.Process
 import com.mikael.novabox.model.ContainerConfig
 import java.io.File
 import java.io.IOException
@@ -48,7 +47,7 @@ object QemuCommandBuilder {
     }
 }
 
-data class QemuSession(val process: Process, val logFile: File, val diskFile: File)
+data class QemuSession(val process: java.lang.Process, val logFile: File, val diskFile: File)
 
 class QemuVirtualMachineManager(context: Context) {
     private val app = context.applicationContext
