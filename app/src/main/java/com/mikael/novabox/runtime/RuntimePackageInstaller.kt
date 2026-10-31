@@ -13,7 +13,6 @@ import java.net.URL
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.UUID
-import kotlin.math.min
 
 data class RuntimeDownloadProgress(
     val downloadedBytes: Long,
@@ -176,7 +175,7 @@ class RuntimePackageInstaller(private val context: Context) {
                 if (downloaded != spec.expectedSizeBytes) {
                     throw IOException("Download incompleto: $downloaded de ${spec.expectedSizeBytes} bytes.")
                 }
-                val actualHash = digest.digest().joinToString("") { "%02x".format(it) }
+                val actualHash = digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
                 if (!actualHash.equals(spec.sha256, ignoreCase = true)) {
                     throw IOException("Falha na verificação SHA-256. O pacote foi descartado.")
                 }
