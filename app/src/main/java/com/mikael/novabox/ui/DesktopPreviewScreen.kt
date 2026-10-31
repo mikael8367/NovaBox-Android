@@ -219,6 +219,9 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                             drawPath(pointer, Color.Black, style = Stroke(width = 2f))
                         }
                     }
+                    if (config.showFpsOverlay) {
+                        PerformanceOverlay(Modifier.align(Alignment.TopEnd).padding(8.dp))
+                    }
                 }
             }
         }
