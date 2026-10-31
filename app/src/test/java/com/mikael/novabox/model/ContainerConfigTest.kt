@@ -85,5 +85,7 @@ class ContainerConfigTest {
         assertNotNull(valid.copy(diskGb = 1).validate())
         assertNotNull(valid.copy(dpi = 300).validate())
         assertNotNull(valid.copy(fpsLimit = 75).validate())
+        assertNotNull(valid.copy(mouseSensitivity = 11).validate())
+        assertNotNull(valid.copy(graphicsMemoryMb = 4096).validate())
     }
 }
