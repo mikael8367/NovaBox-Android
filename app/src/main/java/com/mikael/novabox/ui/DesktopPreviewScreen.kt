@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -86,7 +87,7 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
     Box(
         Modifier.fillMaxSize().background(Color(0xFF111820))
     ) {
-        Column(
+        Box(
             Modifier.fillMaxSize()
                 .background(Color(0xFF202B37))
                 .onGloballyPositioned { canvasSize = it.size }
@@ -125,20 +126,15 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                     }
                 }
         ) {
-            Row(
-                Modifier.fillMaxSize().background(Color(0xFF202B37)),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    Modifier.clip(RoundedCornerShape(14.dp))
+            Column(
+                    Modifier.align(Alignment.Center).clip(RoundedCornerShape(14.dp))
                         .background(Color(0xFF293746))
                         .padding(horizontal = 26.dp, vertical = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        if (isAndroidGuest) Icons.Default.Mouse else Icons.Default.Mouse,
+                        if (isAndroidGuest) Icons.Default.Android else Icons.Default.Mouse,
                         contentDescription = null,
                         tint = NovaGreen,
                         modifier = Modifier.size(30.dp)
@@ -154,7 +150,6 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                         fontSize = 11.sp
                     )
                 }
-            }
 
             Canvas(Modifier.fillMaxSize()) {
                 val x = size.width * cursorX
