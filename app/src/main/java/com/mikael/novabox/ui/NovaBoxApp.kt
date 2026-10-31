@@ -392,7 +392,7 @@ private fun HomeScreen(
                     Text("NOVABOX", color = NovaGreen, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
                     SmallTag("BETA")
                 }
-                Text("Seu espaço.\\nDo seu jeito.", color = NovaText, fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Seu espaço.\nDo seu jeito.", color = NovaText, fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold)
                 Text("Seus ambientes e sistemas em um só lugar.", color = NovaMuted, fontSize = 12.sp)
             }
             Box(
