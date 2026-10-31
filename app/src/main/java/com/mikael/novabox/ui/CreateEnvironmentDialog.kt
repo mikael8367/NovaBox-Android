@@ -199,9 +199,8 @@ fun CreateEnvironmentDialog(
                                     profileId = profile.id
                                     if (family == OsFamily.ANDROID) {
                                         architecture = when (profile.id) {
-                                            "android-x86" -> CpuArchitecture.X86
-                                            "android-x86-64" -> CpuArchitecture.X86_64
-                                            "bliss-os", "prime-os" -> CpuArchitecture.X86_64
+                                            "android-x86", "android-x86-32" -> CpuArchitecture.X86
+                                            "android-x86-64", "bliss-os", "prime-os" -> CpuArchitecture.X86_64
                                             else -> CpuArchitecture.ARM64
                                         }
                                     }
