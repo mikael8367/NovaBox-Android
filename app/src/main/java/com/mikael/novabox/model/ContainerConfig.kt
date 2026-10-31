@@ -6,6 +6,7 @@ enum class OsFamily(val label: String) {
     WINDOWS("Windows"),
     LINUX("Linux"),
     BSD("BSD"),
+    ANDROID("Android"),
     OTHER("Outros")
 }
 
@@ -13,6 +14,7 @@ enum class EngineType {
     WINE_COMPATIBILITY,
     LINUX_USERLAND,
     DOS_EMULATION,
+    ANDROID_VIRTUALIZATION,
     FULL_SYSTEM_VIRTUALIZATION,
     UNSUPPORTED
 }
@@ -67,10 +69,24 @@ object OsCatalog {
         OsProfile("netbsd", "NetBSD", OsFamily.BSD, "10.x", "Sistema BSD; precisa de virtualização de sistema completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("dragonflybsd", "DragonFly BSD", OsFamily.BSD, "6.x", "Sistema BSD; precisa de virtualização de sistema completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
 
+        OsProfile("android-7-1", "Android 7.1 Nougat", OsFamily.ANDROID, "7.1", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-8-1", "Android 8.1 Oreo", OsFamily.ANDROID, "8.1", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-9", "Android 9 Pie", OsFamily.ANDROID, "9", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-10", "Android 10", OsFamily.ANDROID, "10", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-11", "Android 11", OsFamily.ANDROID, "11", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-12", "Android 12", OsFamily.ANDROID, "12", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-13", "Android 13", OsFamily.ANDROID, "13", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-14", "Android 14", OsFamily.ANDROID, "14", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-15", "Android 15", OsFamily.ANDROID, "15", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-16", "Android 16", OsFamily.ANDROID, "16", "Android convidado em máquina virtual; imagem e motor ainda necessários.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-x86", "Android-x86", OsFamily.ANDROID, "9.x", "Projeto Android para arquitetura x86; exige máquina virtual completa.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("android-x86-64", "Android-x86 64-bit", OsFamily.ANDROID, "9.x", "Projeto Android para arquitetura x86-64; exige máquina virtual completa.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("bliss-os", "Bliss OS", OsFamily.ANDROID, "15.x", "Sistema Android para PC em uma máquina virtual.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+        OsProfile("prime-os", "PrimeOS", OsFamily.ANDROID, "Classic", "Sistema Android para desktop em uma máquina virtual.", EngineType.ANDROID_VIRTUALIZATION, "Não integrado"),
+
         OsProfile("freedos", "FreeDOS", OsFamily.OTHER, "1.x", "Sistema compatível com DOS; requer emulador DOS.", EngineType.DOS_EMULATION, "Planejado"),
         OsProfile("reactos", "ReactOS", OsFamily.OTHER, "0.4.x", "Sistema experimental; exige virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("haiku", "Haiku", OsFamily.OTHER, "R1", "Sistema inspirado no BeOS; exige virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
-        OsProfile("android-x86", "Android-x86", OsFamily.OTHER, "9.x", "Imagem de outro sistema Android; exige virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("solaris", "Solaris / illumos", OsFamily.OTHER, "Compatível", "Sistemas Unix; exigem virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("os2", "OS/2 Warp", OsFamily.OTHER, "4.x", "Sistema legado que exige virtualização ou emulação específica.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("beos", "BeOS", OsFamily.OTHER, "5.x", "Sistema legado que exige virtualização ou emulação específica.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
