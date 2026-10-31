@@ -37,8 +37,8 @@ class ProgramFilePolicyTest {
             file.writeText("original")
             val originalHash = ProgramFilePolicy.sha256(file)
             assertEquals(
-                "068c9e1e4c8e7f9f3e5b7b4a2f4f9f7f",
-                originalHash.take(32)
+                "0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5",
+                originalHash
             )
             file.writeText("modified")
             assertFalse(originalHash == ProgramFilePolicy.sha256(file))
