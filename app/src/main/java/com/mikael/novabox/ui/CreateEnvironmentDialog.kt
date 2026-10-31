@@ -62,6 +62,7 @@ fun CreateEnvironmentDialog(
     var name by rememberSaveable(key) { mutableStateOf(initialConfig?.name.orEmpty()) }
     var family by rememberSaveable(key) { mutableStateOf(initialConfig?.profile?.family ?: OsFamily.WINDOWS) }
     var profileId by rememberSaveable(key) { mutableStateOf(initialConfig?.osProfileId ?: "windows-10") }
+    var profileSearch by rememberSaveable(key) { mutableStateOf("") }
     var architecture by rememberSaveable(key) { mutableStateOf(initialConfig?.architecture ?: CpuArchitecture.X86_64) }
     var graphics by rememberSaveable(key) { mutableStateOf(initialConfig?.graphics ?: GraphicsProfile.AUTO) }
     var resolution by rememberSaveable(key) { mutableStateOf(initialConfig?.resolution ?: "1280x720") }
@@ -98,6 +99,15 @@ fun CreateEnvironmentDialog(
 
     val profiles = OsCatalog.byFamily(family)
     val selectedProfile = profiles.firstOrNull { it.id == profileId } ?: profiles.first()
+    val visibleProfiles = if (family == OsFamily.ANDROID && profileSearch.isNotBlank()) {
+        profiles.filter {
+            it.name.contains(profileSearch, ignoreCase = true) ||
+                it.release.contains(profileSearch, ignoreCase = true) ||
+                it.description.contains(profileSearch, ignoreCase = true)
+        }
+    } else {
+        profiles
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -143,6 +153,7 @@ fun CreateEnvironmentDialog(
                 selected = family,
                 onSelect = { option ->
                     family = option
+                    profileSearch = ""
                     profileId = OsCatalog.byFamily(option).first().id
                     architecture = if (option == OsFamily.LINUX || option == OsFamily.ANDROID) {
                         CpuArchitecture.ARM64
@@ -154,8 +165,30 @@ fun CreateEnvironmentDialog(
                 }
             )
 
-            FormLabel("Versão ou distribuição")
-            profiles.chunked(2).forEach { pair ->
+            FormLabel(if (family == OsFamily.ANDROID) "Sistemas Android (" + profiles.size + ")" else "Versão ou distribuição")
+            if (family == OsFamily.ANDROID) {
+                OutlinedTextField(
+                    value = profileSearch,
+                    onValueChange = { profileSearch = it.take(48) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Pesquisar Android, ROM, TV, Go...", color = NovaMuted, fontSize = 11.sp) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = NovaPanelRaised,
+                        unfocusedContainerColor = NovaPanelRaised,
+                        focusedTextColor = NovaText,
+                        unfocusedTextColor = NovaText,
+                        focusedIndicatorColor = NovaGreen,
+                        unfocusedIndicatorColor = NovaBorder,
+                        cursorColor = NovaGreen
+                    )
+                )
+            }
+            if (visibleProfiles.isEmpty()) {
+                Text("Nenhum sistema encontrado. Tente outro nome.", color = NovaMuted, fontSize = 11.sp)
+            }
+            visibleProfiles.chunked(2).forEach { pair ->
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     pair.forEach { profile ->
                         Column(
