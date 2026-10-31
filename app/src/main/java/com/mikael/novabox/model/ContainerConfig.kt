@@ -41,6 +41,7 @@ object OsCatalog {
         OsProfile("windows-me", "Windows ME", OsFamily.WINDOWS, "ME", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
         OsProfile("windows-98", "Windows 98", OsFamily.WINDOWS, "98", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
         OsProfile("windows-95", "Windows 95", OsFamily.WINDOWS, "95", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
+        OsProfile("windows-31", "Windows 3.1", OsFamily.WINDOWS, "3.1", "Ambiente legado de 16 bits; requer compatibilidade adicional.", EngineType.WINE_COMPATIBILITY, "Experimental"),
 
         OsProfile("ubuntu-24", "Ubuntu 24.04 LTS", OsFamily.LINUX, "24.04 LTS", "Distribuição Linux baseada em Debian.", EngineType.LINUX_USERLAND, "Perfil"),
         OsProfile("ubuntu-22", "Ubuntu 22.04 LTS", OsFamily.LINUX, "22.04 LTS", "Distribuição Linux de suporte prolongado.", EngineType.LINUX_USERLAND, "Perfil"),
@@ -72,7 +73,9 @@ object OsCatalog {
         OsProfile("android-x86", "Android-x86", OsFamily.OTHER, "9.x", "Imagem de outro sistema Android; exige virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("solaris", "Solaris / illumos", OsFamily.OTHER, "Compatível", "Sistemas Unix; exigem virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("os2", "OS/2 Warp", OsFamily.OTHER, "4.x", "Sistema legado que exige virtualização ou emulação específica.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
-        OsProfile("beos", "BeOS", OsFamily.OTHER, "5.x", "Sistema legado que exige virtualização ou emulação específica.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado")
+        OsProfile("beos", "BeOS", OsFamily.OTHER, "5.x", "Sistema legado que exige virtualização ou emulação específica.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
+        OsProfile("chromeos", "ChromeOS", OsFamily.OTHER, "Flex / compatível", "Sistema não suportado neste protótipo Android.", EngineType.UNSUPPORTED, "Não suportado"),
+        OsProfile("macos", "macOS", OsFamily.OTHER, "Perfis não disponíveis", "Não oferecido para execução neste projeto.", EngineType.UNSUPPORTED, "Não suportado")
     )
 
     fun byFamily(family: OsFamily): List<OsProfile> = profiles.filter { it.family == family }
