@@ -12,6 +12,7 @@ class ContainerConfigTest {
         assertTrue(OsCatalog.byFamily(OsFamily.WINDOWS).size >= 10)
         assertTrue(OsCatalog.byFamily(OsFamily.LINUX).size >= 10)
         assertTrue(OsCatalog.byFamily(OsFamily.BSD).isNotEmpty())
+        assertTrue(OsCatalog.byFamily(OsFamily.ANDROID).size >= 10)
         assertTrue(OsCatalog.byFamily(OsFamily.OTHER).isNotEmpty())
     }
 
@@ -67,6 +68,30 @@ class ContainerConfigTest {
             architecture = CpuArchitecture.ARM64
         )
         assertTrue(RuntimePlanner.requiredFor(config).contains(RuntimeId.QEMU))
+    }
+
+    @Test
+    fun androidGuestProfilesRequireQemuVirtualization() {
+        val androidVersions = listOf(
+            "android-7-1", "android-8-1", "android-9", "android-10",
+            "android-11", "android-12", "android-13", "android-14",
+            "android-15", "android-16", "android-x86", "android-x86-64",
+            "bliss-os", "prime-os"
+        )
+
+        androidVersions.forEach { profileId ->
+            val profile = OsCatalog.find(profileId)
+            assertNotNull("Missing profile: $profileId", profile)
+            assertEquals(OsFamily.ANDROID, profile?.family)
+            assertEquals(EngineType.ANDROID_VIRTUALIZATION, profile?.engine)
+
+            val config = ContainerConfig(
+                name = "Android guest",
+                osProfileId = profileId,
+                architecture = CpuArchitecture.ARM64
+            )
+            assertEquals(listOf(RuntimeId.QEMU), RuntimePlanner.requiredFor(config))
+        }
     }
 
     @Test
