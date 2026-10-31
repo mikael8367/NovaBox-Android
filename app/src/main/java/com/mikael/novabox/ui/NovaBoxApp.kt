@@ -208,6 +208,19 @@ fun NovaBoxApp() {
                                 onDelete = { config ->
                                     val attachedPrograms = programs.filter { it.containerId == config.id }
                                     scope.launch {
+                                        val processStopped = withContext(Dispatchers.IO) {
+                                            !WineProcessSupervisor.isRunning(config.id) ||
+                                                WineProcessSupervisor.stop(config.id)
+                                        }
+                                        runningWine[config.id] = WineProcessSupervisor.isRunning(config.id)
+                                        if (!processStopped) {
+                                            Toast.makeText(
+                                                context,
+                                                "O processo Wine não encerrou. O ambiente foi preservado para evitar apagar arquivos em uso.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            return@launch
+                                        }
                                         val deletionResults = withContext(Dispatchers.IO) {
                                             attachedPrograms.map { entry -> entry.id to programRepository.delete(entry) }
                                         }

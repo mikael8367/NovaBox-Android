@@ -45,4 +45,19 @@ class WineProcessSupervisorTest {
     @Test fun stoppingUnknownEnvironmentReturnsFalse() {
         assertFalse(WineProcessSupervisor.stop("not-running"))
     }
+    @Test fun stopAllTerminatesEveryTrackedEnvironment() {
+        val first = WineProcessSupervisor.start("stop-all-one") { sleepingProcess() }
+        val second = WineProcessSupervisor.start("stop-all-two") { sleepingProcess() }
+        try {
+            assertEquals(emptySet<String>(), WineProcessSupervisor.stopAll(100))
+            assertFalse(first.isAlive)
+            assertFalse(second.isAlive)
+            assertFalse(WineProcessSupervisor.isRunning("stop-all-one"))
+            assertFalse(WineProcessSupervisor.isRunning("stop-all-two"))
+        } finally {
+            if (first.isAlive) first.destroyForcibly()
+            if (second.isAlive) second.destroyForcibly()
+        }
+    }
+
 }
