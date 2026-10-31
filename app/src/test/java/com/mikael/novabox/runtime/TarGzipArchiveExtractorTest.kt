@@ -6,7 +6,6 @@ import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.util.zip.GZIPOutputStream
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,6 +22,7 @@ class TarGzipArchiveExtractorTest {
                     TarEntry("dxvk-3.1.1/", byteArrayOf(), '5'),
                     TarEntry("dxvk-3.1.1/x64/dxgi.dll", byteArrayOf(1, 2, 3)),
                     TarEntry("dxvk-3.1.1/x64/d3d11.dll", byteArrayOf(4, 5, 6)),
+                    TarEntry("dxvk-3.1.1/LICENSE", "license text".toByteArray()),
                     TarEntry("dxvk-3.1.1/README.txt", "not installed".toByteArray())
                 )
             )
@@ -32,7 +32,8 @@ class TarGzipArchiveExtractorTest {
                 destination = destination,
                 rootDirectory = "dxvk-3.1.1",
                 outputDirectory = "lib/dxvk",
-                allowedFiles = setOf("x64/dxgi.dll", "x64/d3d11.dll"),
+                allowedFiles = setOf("x64/dxgi.dll", "x64/d3d11.dll", "LICENSE"),
+                requiredFiles = setOf("x64/dxgi.dll", "x64/d3d11.dll"),
                 maxExpandedBytes = 1024L
             )
 
@@ -44,7 +45,59 @@ class TarGzipArchiveExtractorTest {
                 byteArrayOf(4, 5, 6),
                 File(destination, "lib/dxvk/x64/d3d11.dll").readBytes()
             )
+            assertEquals("license text", File(destination, "lib/dxvk/LICENSE").readText())
             assertTrue(!File(destination, "lib/dxvk/README.txt").exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun rejectsLinksInsteadOfCreatingThem() {
+        val root = createTempDir(prefix = "novabox-tar-link-")
+        try {
+            val archive = File(root, "link.tar.gz")
+            writeTarGz(
+                archive,
+                listOf(TarEntry("dxvk-3.1.1/x64/dxgi.dll", byteArrayOf(), '2'))
+            )
+            val error = runCatching {
+                TarGzipArchiveExtractor.extract(
+                    archive = archive,
+                    destination = File(root, "staging"),
+                    rootDirectory = "dxvk-3.1.1",
+                    outputDirectory = "lib/dxvk",
+                    allowedFiles = setOf("x64/dxgi.dll"),
+                    maxExpandedBytes = 1024L
+                )
+            }.exceptionOrNull()
+            assertNotNull(error)
+            assertTrue(!File(root, "outside.dll").exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun failsWhenARequiredFileIsMissing() {
+        val root = createTempDir(prefix = "novabox-tar-missing-")
+        try {
+            val archive = File(root, "partial.tar.gz")
+            writeTarGz(
+                archive,
+                listOf(TarEntry("dxvk-3.1.1/x64/dxgi.dll", byteArrayOf(1, 2, 3)))
+            )
+            val error = runCatching {
+                TarGzipArchiveExtractor.extract(
+                    archive = archive,
+                    destination = File(root, "staging"),
+                    rootDirectory = "dxvk-3.1.1",
+                    outputDirectory = "lib/dxvk",
+                    allowedFiles = setOf("x64/dxgi.dll", "x64/d3d11.dll"),
+                    maxExpandedBytes = 1024L
+                )
+            }.exceptionOrNull()
+            assertNotNull(error)
         } finally {
             root.deleteRecursively()
         }
