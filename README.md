@@ -28,6 +28,11 @@ O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista,
 - Tela cheia e desktop virtual.
 - Opções Wine, DXVK, VKD3D-Proton, ESYNC, FSYNC e WoW64.
 - Perfil Box64, idioma, variáveis de ambiente e caminho de pasta compartilhada.
+- Perfil de desempenho (economia/equilibrado/alto desempenho), orientação, tela ligada, contador de FPS, teclado virtual, aceleração gráfica, captura do mouse, área de transferência e compartilhamento de arquivos.
+- Windows/Wine: modo de jogo, ajustes de registro e serviços como opções de perfil, DPI alto, argumentos de inicialização e substituições de DLL.
+- Android convidado: animações, janelas múltiplas, Google Play Services (se a imagem tiver os pacotes), notificações, apps em segundo plano, depuração ADB e animação de boot.
+
+As opções novas são salvas por ambiente e ambientes antigos recebem valores padrão ao serem carregados. Enquanto Wine/QEMU e os demais motores não consumirem esses parâmetros, elas representam configurações desejadas do perfil — não alterações já aplicadas ao sistema convidado.
 
 Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. Windows/Wine está configurado para compartilhar a rede do Android hospedeiro quando o runtime estiver ativo. Android virtual usa o modo NAT como configuração desejada, mas precisa do encaminhamento de rede do QEMU para funcionar.
 
