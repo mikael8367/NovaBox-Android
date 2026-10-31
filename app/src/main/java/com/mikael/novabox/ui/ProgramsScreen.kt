@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Terminal
@@ -58,9 +59,12 @@ fun ProgramsScreen(
     onInitializePrefix: (ContainerConfig) -> Unit,
     onImport: (ContainerConfig) -> Unit,
     onDelete: (ProgramEntry) -> Unit,
-    onVerify: (ProgramEntry) -> Unit
+    onVerify: (ProgramEntry) -> Unit,
+    logContents: Map<String, String>,
+    onViewLog: (ContainerConfig) -> Unit
 ) {
     var pendingDelete by remember { mutableStateOf<ProgramEntry?>(null) }
+    var selectedLog by remember { mutableStateOf<ContainerConfig?>(null) }
     Column(
         Modifier.fillMaxSize().background(NovaBackground).statusBarsPadding().verticalScroll(rememberScrollState())
             .padding(horizontal = 17.dp, vertical = 15.dp),
@@ -133,6 +137,17 @@ fun ProgramsScreen(
                                 body = workspace?.message ?: "Prepare a estrutura privada deste ambiente e inicialize o prefixo com o runtime instalado.",
                                 warning = !initialized
                             )
+                            Row(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp))
+                                    .background(NovaPanelRaised).clickable { selectedLog = config; onViewLog(config) }
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Default.Description, contentDescription = null, tint = NovaGreen, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.size(6.dp))
+                                Text("Abrir log do Wine", color = NovaGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp))
                                     .background(NovaPanelRaised).clickable { onPrepareWorkspace(config) }
@@ -224,6 +239,22 @@ fun ProgramsScreen(
             color = NovaMuted,
             fontSize = 9.sp,
             lineHeight = 13.sp
+        )
+    }
+
+    selectedLog?.let { config ->
+        AlertDialog(
+            onDismissRequest = { selectedLog = null },
+            title = { Text("Log Wine • ${config.name}") },
+            text = {
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    Text(logContents[config.id] ?: "Carregando log…", color = NovaMuted, fontSize = 9.sp, lineHeight = 13.sp)
+                }
+            },
+            confirmButton = { TextButton(onClick = { selectedLog = null }) { Text("Fechar") } },
+            containerColor = NovaPanel,
+            titleContentColor = NovaText,
+            textContentColor = NovaMuted
         )
     }
 

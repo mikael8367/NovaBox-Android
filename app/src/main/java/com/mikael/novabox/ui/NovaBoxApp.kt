@@ -83,6 +83,7 @@ import com.mikael.novabox.model.RuntimeId
 import com.mikael.novabox.runtime.EngineAvailability
 import com.mikael.novabox.runtime.RuntimeEngine
 import com.mikael.novabox.runtime.WineProcessSupervisor
+import com.mikael.novabox.runtime.WineLogReader
 import com.mikael.novabox.runtime.WineRuntimeLauncher
 import com.mikael.novabox.runtime.WineWorkspaceManager
 import com.mikael.novabox.runtime.WineWorkspaceStatus
@@ -146,6 +147,18 @@ fun NovaBoxApp() {
     val runningWine = remember {
         mutableStateMapOf<String, Boolean>().apply {
             containers.forEach { config -> put(config.id, WineProcessSupervisor.isRunning(config.id)) }
+        }
+    }
+    val wineLogs = remember { mutableStateMapOf<String, String>() }
+
+    LaunchedEffect(selectedTab, containers.map { it.id }) {
+        while (selectedTab == MainTab.PROGRAMS) {
+            val snapshot = withContext(Dispatchers.IO) {
+                containers.associate { config -> config.id to WineProcessSupervisor.isRunning(config.id) }
+            }
+            runningWine.clear()
+            runningWine.putAll(snapshot)
+            delay(900)
         }
     }
 
@@ -354,6 +367,21 @@ fun NovaBoxApp() {
                                             else "Falha na integridade: o arquivo foi alterado, está incompleto ou não está acessível.",
                                             Toast.LENGTH_LONG
                                         ).show()
+                                    }
+                                },
+                                logContents = wineLogs,
+                                onViewLog = { config ->
+                                    scope.launch {
+                                        wineLogs[config.id] = withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                WineLogReader.readTail(
+                                                    java.io.File(context.filesDir, "wine-workspaces"),
+                                                    config.id
+                                                )
+                                            }.getOrElse { error ->
+                                                error.message ?: "Não foi possível ler o log."
+                                            }
+                                        }
                                     }
                                 }
                             )
