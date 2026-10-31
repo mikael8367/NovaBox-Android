@@ -1,4 +1,4 @@
-name: Android compile and debug APK
+name: Android compile check
 
 on:
   push:
@@ -25,12 +25,5 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compile, test and assemble debug APK
-        run: gradle :app:compileDebugKotlin :app:testDebugUnitTest :app:assembleDebug
-      - name: Upload debug APK for device testing
-        uses: actions/upload-artifact@v4
-        with:
-          name: NovaBox-debug-apk-${{ github.sha }}
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 7
+      - name: Compile Kotlin sources and run unit tests
+        run: gradle :app:compileDebugKotlin :app:testDebugUnitTest
