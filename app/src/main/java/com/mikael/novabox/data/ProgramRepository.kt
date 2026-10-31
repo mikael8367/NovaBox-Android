@@ -185,15 +185,6 @@ class ProgramRepository(private val context: Context) {
         }.getOrDefault(false)
     }
 
-    fun verifyIntegrity(entry: ProgramEntry): Boolean {
-        val file = fileFor(entry) ?: return false
-        if (!file.isFile || file.length() != entry.sizeBytes) return false
-        if (!entry.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))) return false
-        return runCatching {
-            ProgramFilePolicy.sha256(file) == entry.sha256.lowercase()
-        }.getOrDefault(false)
-    }
-
     fun delete(entry: ProgramEntry): Boolean {
         val file = fileFor(entry) ?: return false
         val removed = !file.exists() || file.delete()
