@@ -5,7 +5,7 @@ Launcher experimental de ambientes de compatibilidade para Android, com interfac
 ## Interface
 
 - Tema escuro próprio com detalhes verde-neon.
-- Navegação inferior animada: Início, Ambientes, Motores e Ajustes.
+- Navegação inferior animada: Início, Ambientes, Motores, Programas e Ajustes.
 - Biblioteca de perfis com editar, excluir e salvar configurações.
 - Prévia de desktop com cursor de mouse controlado pelo toque.
 - Interface responsiva e sem imagens ou telas copiadas de outros launchers.
