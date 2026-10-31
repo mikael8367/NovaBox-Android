@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
@@ -50,7 +51,8 @@ fun ProgramsScreen(
     workspaceStatuses: Map<String, WineWorkspaceStatus>,
     onPrepareWorkspace: (ContainerConfig) -> Unit,
     onImport: (ContainerConfig) -> Unit,
-    onDelete: (ProgramEntry) -> Unit
+    onDelete: (ProgramEntry) -> Unit,
+    onVerify: (ProgramEntry) -> Unit
 ) {
     var pendingDelete by remember { mutableStateOf<ProgramEntry?>(null) }
     Column(
@@ -146,6 +148,13 @@ fun ProgramsScreen(
                                             fontSize = 9.sp
                                         )
                                     }
+                                    Icon(
+                                        Icons.Default.VerifiedUser,
+                                        contentDescription = "Verificar integridade",
+                                        tint = NovaGreen,
+                                        modifier = Modifier.size(19.dp).clickable { onVerify(entry) }.padding(1.dp)
+                                    )
+                                    Spacer(Modifier.size(8.dp))
                                     Icon(
                                         Icons.Default.DeleteOutline,
                                         contentDescription = "Remover programa",
