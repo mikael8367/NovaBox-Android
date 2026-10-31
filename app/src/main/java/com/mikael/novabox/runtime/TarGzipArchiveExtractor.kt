@@ -150,12 +150,13 @@ internal object TarGzipArchiveExtractor {
     }
 
     private fun validateArchivePath(path: String) {
-        if (path.isBlank() || path.startsWith('/') || path.contains('\\') ||
-            Regex("^[A-Za-z]:").containsMatchIn(path)
+        val normalized = path.removeSuffix("/")
+        if (normalized.isBlank() || normalized.startsWith('/') || normalized.contains('\\') ||
+            Regex("^[A-Za-z]:").containsMatchIn(normalized)
         ) {
             throw IOException("O pacote contém um caminho absoluto ou inválido.")
         }
-        val parts = path.removeSuffix("/").split('/')
+        val parts = normalized.split('/')
         if (parts.any { it == "." || it == ".." || it.isEmpty() }) {
             throw IOException("O pacote contém tentativa de sair da pasta de instalação.")
         }
