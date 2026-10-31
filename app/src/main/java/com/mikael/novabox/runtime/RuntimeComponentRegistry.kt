@@ -88,7 +88,12 @@ object RuntimeComponentRegistry {
         RuntimeComponentDefinition(
             RuntimeId.DXVK, "Tradução Direct3D 9/10/11 para Vulkan",
             listOf(RuntimeId.WINE),
-            listOf(listOf("lib/dxvk/dxgi.dll", "lib/dxvk/d3d11.dll", "lib/dxvk/d3d9.dll")),
+            listOf(
+                listOf("lib/dxvk/x32/d3d9.dll", "lib/dxvk/x64/d3d9.dll"),
+                listOf("lib/dxvk/x32/d3d10core.dll", "lib/dxvk/x64/d3d10core.dll"),
+                listOf("lib/dxvk/x32/d3d11.dll", "lib/dxvk/x64/d3d11.dll"),
+                listOf("lib/dxvk/x32/dxgi.dll", "lib/dxvk/x64/dxgi.dll")
+            ),
             requiresVulkan = true
         ),
         RuntimeComponentDefinition(
