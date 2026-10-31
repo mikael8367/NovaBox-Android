@@ -645,7 +645,7 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
             warning = true
         )
         Spacer(Modifier.height(10.dp))
-        RuntimePackageInstallCard(
+        XServerCard()\n        Spacer(Modifier.height(10.dp))\n        RuntimePackageInstallCard(
             runtimeEngine = runtimeEngine,
             onInstallChanged = { refreshCounter += 1 }
         )
