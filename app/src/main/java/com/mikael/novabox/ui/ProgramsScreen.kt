@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -41,7 +42,7 @@ fun ProgramsScreen(
     onDelete: (ProgramEntry) -> Unit
 ) {
     Column(
-        Modifier.fillMaxSize().background(NovaBackground).verticalScroll(rememberScrollState())
+        Modifier.fillMaxSize().background(NovaBackground).statusBarsPadding().verticalScroll(rememberScrollState())
             .padding(horizontal = 17.dp, vertical = 15.dp),
         verticalArrangement = Arrangement.spacedBy(13.dp)
     ) {
