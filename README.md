@@ -46,7 +46,7 @@ A próxima integração necessária é fornecer builds Android/ARM64 validados d
 
 ## Biblioteca de programas e diagnóstico
 
-A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Nenhuma permissão ampla de armazenamento é solicitada.
+A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Cada item também oferece uma verificação manual de integridade: o NovaBox relê o conteúdo em fluxo, recalcula SHA-256 e compara com o hash registrado na importação. A leitura ocorre em segundo plano para não bloquear a interface. Nenhuma permissão ampla de armazenamento é solicitada.
 
 A biblioteca não executa programas ainda. Para execução gráfica real, ainda são necessários Wine e Box64 ARM64 validados, prefixo Wine por ambiente, servidor/display gráfico, entrada de mouse e teclado, áudio, integração de clipboard e ciclo de vida de processos. O cartão de diagnóstico nas configurações mostra modelo/Android, ABI, RAM, espaço livre, OpenGL ES e presença da feature Vulkan; o relatório pode ser copiado para suporte.
 
