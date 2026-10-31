@@ -125,7 +125,7 @@ enum class AudioMode(val label: String) {
 }
 
 enum class NetworkMode(val label: String) {
-    NAT("NAT"),
+    NAT("Compartilhar Internet do celular (NAT)"),
     DISABLED("Desativada")
 }
 
