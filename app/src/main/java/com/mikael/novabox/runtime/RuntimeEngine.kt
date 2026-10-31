@@ -33,7 +33,18 @@ class RuntimeEngine(private val context: Context) {
         return EngineAvailability.Ready(required.map { executableFor(it).absolutePath })
     }
 
-    fun isComponentInstalled(id: RuntimeId): Boolean = executableFor(id).canExecute()
+    fun isComponentInstalled(id: RuntimeId): Boolean {
+        val target = executableFor(id)
+        val isLibraryMarker = id in setOf(
+            RuntimeId.MESA,
+            RuntimeId.VIRGL,
+            RuntimeId.ZINK,
+            RuntimeId.TURNIP,
+            RuntimeId.DXVK,
+            RuntimeId.VKD3D
+        )
+        return if (isLibraryMarker) target.isFile else target.isFile && target.canExecute()
+    }
 
     fun runtimeDirectory(id: RuntimeId): File =
         File(context.filesDir, "runtimes/${id.name.lowercase()}")
