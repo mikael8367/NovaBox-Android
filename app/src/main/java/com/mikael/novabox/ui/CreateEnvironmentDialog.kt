@@ -133,21 +133,20 @@ fun CreateEnvironmentDialog(
             )
 
             FormLabel("Família do sistema")
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OsFamily.entries.forEach { option ->
-                    SelectableChip(
-                        text = option.label,
-                        selected = family == option,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            family = option
-                            profileId = OsCatalog.byFamily(option).first().id
-                            architecture = if (option == OsFamily.LINUX) CpuArchitecture.ARM64 else CpuArchitecture.X86_64
-                            error = null
-                        }
-                    )
+            ChoiceGrid(
+                options = OsFamily.entries.map { it.label to it },
+                selected = family,
+                onSelect = { option ->
+                    family = option
+                    profileId = OsCatalog.byFamily(option).first().id
+                    architecture = if (option == OsFamily.LINUX || option == OsFamily.ANDROID) {
+                        CpuArchitecture.ARM64
+                    } else {
+                        CpuArchitecture.X86_64
+                    }
+                    error = null
                 }
-            }
+            )
 
             FormLabel("Versão ou distribuição")
             profiles.chunked(2).forEach { pair ->
@@ -176,6 +175,7 @@ fun CreateEnvironmentDialog(
                     EngineType.WINE_COMPATIBILITY -> "Perfil de compatibilidade Windows"
                     EngineType.LINUX_USERLAND -> "Ambiente Linux de usuário"
                     EngineType.DOS_EMULATION -> "Emulação DOS"
+                    EngineType.ANDROID_VIRTUALIZATION -> "Android virtual em máquina convidada"
                     EngineType.FULL_SYSTEM_VIRTUALIZATION -> "Virtualização completa necessária"
                     EngineType.UNSUPPORTED -> "Motor não disponível"
                 },
@@ -183,6 +183,7 @@ fun CreateEnvironmentDialog(
                     EngineType.WINE_COMPATIBILITY -> "Este perfil configura o Wine para aplicativos Windows. Não instala nem inicializa uma cópia completa do Windows."
                     EngineType.LINUX_USERLAND -> "Este perfil foi pensado para um ambiente Linux de usuário via PRoot. Não inicia um kernel ou desktop Linux completo."
                     EngineType.DOS_EMULATION -> "Este sistema depende de um emulador DOS. O motor ainda não foi integrado."
+                    EngineType.ANDROID_VIRTUALIZATION -> "Este perfil cria a configuração de um Android convidado. Para inicializar, ainda precisamos integrar QEMU ou um backend de virtualização compatível e obter uma imagem Android ARM64/x86_64. O desempenho pode ser baixo sem aceleração por hardware."
                     EngineType.FULL_SYSTEM_VIRTUALIZATION -> "Este sistema exige QEMU ou outro virtualizador de máquina completa. Essa integração ainda não existe no app."
                     EngineType.UNSUPPORTED -> "Não há motor de execução configurado para este sistema."
                 },
