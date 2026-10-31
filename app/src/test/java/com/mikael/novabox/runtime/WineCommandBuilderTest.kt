@@ -54,10 +54,19 @@ class WineCommandBuilderTest {
     @Test fun buildsWinlatorCompatibleEnvironmentWithIsolatedPrefix() {
         val root = File("/data/user/0/com.mikael.novabox/files/runtimes/rootfs")
         val workspace = File("/data/user/0/com.mikael.novabox/files/wine-workspaces/test")
-        val env = WineEnvironmentBuilder.build(root, workspace)
+        val config = ContainerConfig(
+            name = "Teste",
+            osProfileId = "windows-10",
+            esyncEnabled = true,
+            fsyncEnabled = false
+        )
+        val env = WineEnvironmentBuilder.build(root, workspace, config)
         assertEquals(File(workspace, "prefix").absolutePath, env["WINEPREFIX"])
         assertEquals(File(workspace, "home").absolutePath, env["HOME"])
         assertEquals(File(workspace, "tmp").absolutePath, env["TMPDIR"])
+        assertEquals("win64", env["WINEARCH"])
+        assertEquals("1", env["WINEESYNC"])
+        assertFalse(env.containsKey("WINEFSYNC"))
         assertEquals(listOf(File(root, "opt/wine/bin").absolutePath, File(root, "usr/local/bin").absolutePath,
             File(root, "usr/bin").absolutePath).joinToString(File.pathSeparator), env["PATH"])
         assertTrue(env["BOX64_LD_LIBRARY_PATH"]!!.contains("lib/x86_64-linux-gnu"))
@@ -66,16 +75,38 @@ class WineCommandBuilderTest {
         assertFalse(env.containsKey("DISPLAY"))
     }
 
+ 
+    @Test fun appliesConfiguredWineSynchronizationOptions() {
+        val root = createTempDir(prefix = "novabox-rootfs-")
+        val workspace = createTempDir(prefix = "novabox-workspace-")
+        try {
+            val config = ContainerConfig(
+                name = "Teste",
+                osProfileId = "windows-10",
+                esyncEnabled = false,
+                fsyncEnabled = true
+            )
+            val env = WineEnvironmentBuilder.build(root, workspace, config)
+            assertFalse(env.containsKey("WINEESYNC"))
+            assertEquals("1", env["WINEFSYNC"])
+            assertEquals("win64", env["WINEARCH"])
+        } finally {
+            root.deleteRecursively()
+            workspace.deleteRecursively()
+        }
+    }
+
     @Test fun includesBox64RcOnlyWhenPresent() {
         val root = createTempDir(prefix = "novabox-rootfs-")
         val workspace = createTempDir(prefix = "novabox-workspace-")
         try {
-            val withoutRc = WineEnvironmentBuilder.build(root, workspace)
+            val defaultConfig = ContainerConfig(name = "Teste", osProfileId = "windows-10")
+            val withoutRc = WineEnvironmentBuilder.build(root, workspace, defaultConfig)
             assertFalse(withoutRc.containsKey("BOX64_RCFILE"))
             val rc = File(root, "etc/config.box64rc")
             rc.parentFile.mkdirs()
             rc.writeText("# test")
-            val withRc = WineEnvironmentBuilder.build(root, workspace)
+            val withRc = WineEnvironmentBuilder.build(root, workspace, defaultConfig)
             assertEquals(rc.absolutePath, withRc["BOX64_RCFILE"])
         } finally {
             root.deleteRecursively()

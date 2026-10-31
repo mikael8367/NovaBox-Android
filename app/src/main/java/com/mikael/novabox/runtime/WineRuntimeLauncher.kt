@@ -27,7 +27,7 @@ object WineCommandBuilder {
 
 /** Environment parity with Winlator's guest launcher, while keeping each prefix isolated. */
 object WineEnvironmentBuilder {
-    fun build(rootfs: File, workspace: File): Map<String, String> {
+    fun build(rootfs: File, workspace: File, config: ContainerConfig): Map<String, String> {
         val wineBin = File(rootfs, "opt/wine/bin").absolutePath
         val box64Bin = File(rootfs, "usr/local/bin").absolutePath
         val usrBin = File(rootfs, "usr/bin").absolutePath
@@ -38,6 +38,8 @@ object WineEnvironmentBuilder {
             "USER" to "xuser",
             "TMPDIR" to File(workspace, "tmp").absolutePath,
             "WINEPREFIX" to File(workspace, "prefix").absolutePath,
+            // The runtime ships a 64-bit Wine build; WoW64 handles 32-bit apps inside this prefix.
+            "WINEARCH" to "win64",
             "PATH" to listOf(wineBin, box64Bin, usrBin).joinToString(File.pathSeparator),
             "LD_LIBRARY_PATH" to File(rootfs, "usr/lib").absolutePath,
             "BOX64_LD_LIBRARY_PATH" to listOf(x64Libraries, x64UsrLibraries).joinToString(File.pathSeparator),
@@ -47,6 +49,8 @@ object WineEnvironmentBuilder {
             "BOX64_NOBANNER" to "1",
             "WINEDEBUG" to "-all",
         )
+        if (config.esyncEnabled) env["WINEESYNC"] = "1"
+        if (config.fsyncEnabled) env["WINEFSYNC"] = "1"
         val rcFile = File(rootfs, "etc/config.box64rc")
         if (rcFile.isFile) env["BOX64_RCFILE"] = rcFile.absolutePath
         return env
@@ -134,7 +138,7 @@ class WineRuntimeLauncher(context: Context) {
         val root = rootfs.canonicalFile
         val builder = ProcessBuilder(command).directory(root).redirectErrorStream(true)
             .redirectOutput(ProcessBuilder.Redirect.appendTo(logFile))
-        builder.environment().putAll(WineEnvironmentBuilder.build(root, workspace))
+        builder.environment().putAll(WineEnvironmentBuilder.build(root, workspace, config))
         return try {
             WineProcessSupervisor.start(config.id) { builder.start() }
         } catch (error: Exception) {

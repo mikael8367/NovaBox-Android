@@ -26,7 +26,9 @@ O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista,
 - Backend gráfico.
 - Áudio, Internet compartilhada (NAT) ou rede desativada e modo de mouse.
 - Tela cheia e desktop virtual.
-- Opções Wine, DXVK, VKD3D-Proton, ESYNC, FSYNC e WoW64.
+- Opções Wine prefix configuration: the launcher now explicitly creates 64-bit prefixes (WINEARCH=win64), matching the bundled x86-64 Wine build. The per-environment Esync/Fsync toggles are passed to Wine only when enabled. This does not add a graphical display backend or guarantee that Fsync is supported by the Android kernel.
+
+Wine, DXVK, VKD3D-Proton, ESYNC, FSYNC e WoW64.
 - Perfil Box64, idioma, variáveis de ambiente e caminho de pasta compartilhada.
 - Perfil de desempenho (economia/equilibrado/alto desempenho), orientação, tela ligada, contador de FPS, teclado virtual, aceleração gráfica, captura do mouse, área de transferência e compartilhamento de arquivos.
 - Windows/Wine: modo de jogo, ajustes de registro e serviços como opções de perfil, DPI alto, argumentos de inicialização e substituições de DLL.
