@@ -151,6 +151,8 @@ fun NovaBoxApp() {
     }
     val wineLogs = remember { mutableStateMapOf<String, String>() }
 
+
+    var selectedTab by remember { mutableStateOf(MainTab.HOME) }
     LaunchedEffect(selectedTab, containers.map { it.id }) {
         while (selectedTab == MainTab.PROGRAMS) {
             val snapshot = withContext(Dispatchers.IO) {
@@ -161,8 +163,6 @@ fun NovaBoxApp() {
             delay(900)
         }
     }
-
-    var selectedTab by remember { mutableStateOf(MainTab.HOME) }
     var activePreview by remember { mutableStateOf<ContainerConfig?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var editingConfig by remember { mutableStateOf<ContainerConfig?>(null) }
