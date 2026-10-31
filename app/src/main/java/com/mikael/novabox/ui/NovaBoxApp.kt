@@ -654,6 +654,8 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
             onInstallChanged = { refreshCounter += 1 }
         )
         Spacer(Modifier.height(10.dp))
+        ProotInstallCard(onInstallChanged = { refreshCounter += 1 })
+        Spacer(Modifier.height(10.dp))
         LinuxTerminalCard()
         Spacer(Modifier.height(10.dp))
         LazyColumn(
