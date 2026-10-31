@@ -1,37 +1,45 @@
 package com.mikael.novabox.runtime
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class WineCommandBuilderTest {
-    @Test
-    fun buildsRootfsCommandWithBox64AndWorkspaceBindings() {
+    @Test fun buildsHostBox64ThenGuestWineCommand() {
         val command = WineCommandBuilder.build(
-            prootExecutable = "/data/user/0/app/files/runtimes/proot/bin/proot",
-            rootfsDirectory = "/data/user/0/app/files/runtimes/rootfs",
-            workspaceDirectory = "/data/user/0/app/files/wine-workspaces/win-1",
-            sharedProgramsDirectory = "/data/user/0/app/files/programs/win-1",
-            guestCommand = listOf("/usr/bin/wine", "/programs/setup program.exe")
+            "/data/app/files/rootfs/usr/local/bin/box64",
+            "/data/app/files/rootfs/opt/wine/bin/wine",
+            listOf("/data/app/files/programs/42/setup.program")
         )
-
-        assertEquals("/data/user/0/app/files/runtimes/proot/bin/proot", command.first())
-        assertTrue(command.contains("-r"))
-        assertTrue(command.contains("/data/user/0/app/files/runtimes/rootfs"))
-        assertTrue(command.contains("/data/user/0/app/files/wine-workspaces/win-1:/workspace"))
-        assertTrue(command.contains("/data/user/0/app/files/programs/win-1:/programs"))
-        assertEquals("/usr/bin/box64", command[command.indexOf("-w") + 2])
-        assertEquals("/usr/bin/wine", command[command.lastIndexOf("/usr/bin/wine")])
-        assertEquals("/programs/setup program.exe", command.last())
+        assertEquals(
+            listOf(
+                "/data/app/files/rootfs/usr/local/bin/box64",
+                "/data/app/files/rootfs/opt/wine/bin/wine",
+                "/data/app/files/programs/42/setup.program"
+            ),
+            command
+        )
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun rejectsEmptyGuestCommand() {
-        WineCommandBuilder.build("/proot", "/rootfs", "/workspace", "/programs", emptyList())
+    @Test fun preservesArgumentsContainingSpaces() {
+        val command = WineCommandBuilder.build(
+            "/runtime/box64",
+            "/runtime/wine",
+            listOf("/program files/setup.exe", "/quiet mode")
+        )
+        assertEquals("/program files/setup.exe", command[2])
+        assertEquals("/quiet mode", command[3])
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun rejectsBlankGuestArguments() {
-        WineCommandBuilder.build("/proot", "/rootfs", "/workspace", "/programs", listOf("/usr/bin/wine", " "))
+    @Test fun rejectsMissingExecutablesAndArguments() {
+        assertThrows(IllegalArgumentException::class.java) {
+            WineCommandBuilder.build("", "/runtime/wine", listOf("app.exe"))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            WineCommandBuilder.build("/runtime/box64", "/runtime/wine", emptyList())
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            WineCommandBuilder.build("/runtime/box64", "/runtime/wine", listOf(" "))
+        }
     }
 }
