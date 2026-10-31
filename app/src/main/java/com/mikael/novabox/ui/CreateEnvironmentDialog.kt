@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.mikael.novabox.model.AudioMode
+import com.mikael.novabox.model.Box64Preset
 import com.mikael.novabox.model.ContainerConfig
 import com.mikael.novabox.model.CpuArchitecture
 import com.mikael.novabox.model.EngineType
@@ -80,6 +81,9 @@ fun CreateEnvironmentDialog(
     var fsyncEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.fsyncEnabled ?: false) }
     var wow64Enabled by rememberSaveable(key) { mutableStateOf(initialConfig?.wow64Enabled ?: true) }
     var winePreset by rememberSaveable(key) { mutableStateOf(initialConfig?.winePreset ?: WinePreset.STABLE) }
+    var box64Preset by rememberSaveable(key) { mutableStateOf(initialConfig?.box64Preset ?: Box64Preset.BALANCED) }
+    var graphicsMemoryMb by rememberSaveable(key) { mutableStateOf(initialConfig?.graphicsMemoryMb ?: 512) }
+    var fpsLimit by rememberSaveable(key) { mutableStateOf(initialConfig?.fpsLimit ?: 60) }
     var locale by rememberSaveable(key) { mutableStateOf(initialConfig?.locale ?: "pt_BR") }
     var environmentVariables by rememberSaveable(key) { mutableStateOf(initialConfig?.environmentVariables.orEmpty()) }
     var sharedFolderPath by rememberSaveable(key) { mutableStateOf(initialConfig?.sharedFolderPath.orEmpty()) }
@@ -229,6 +233,21 @@ fun CreateEnvironmentDialog(
                 onSelect = { dpi = it }
             )
 
+            FormLabel("Limite de FPS: $fpsLimit")
+            ChoiceGrid(
+                options = ContainerConfig.supportedFpsLimits.map { "$it FPS" to it },
+                selected = fpsLimit,
+                onSelect = { fpsLimit = it }
+            )
+
+            FormLabel("Memória gráfica virtual: $graphicsMemoryMb MB")
+            ChoiceGrid(
+                options = listOf(128, 256, 512, 1024, 2048).map { "$it MB" to it },
+                selected = graphicsMemoryMb,
+                onSelect = { graphicsMemoryMb = it }
+            )
+            Text("É um limite/configuração do perfil; não reserva memória física da GPU.", color = NovaMuted, fontSize = 9.sp)
+
             FormLabel("Renderização gráfica")
             ChoiceGrid(
                 options = GraphicsProfile.entries.map { it.label to it },
@@ -271,6 +290,10 @@ fun CreateEnvironmentDialog(
                 if (selectedProfile.engine == EngineType.WINE_COMPATIBILITY) {
                     FormLabel("Versão do Wine desejada")
                     ChoiceGrid(WinePreset.entries.map { it.label to it }, winePreset, onSelect = { winePreset = it })
+                }
+                if (architecture != CpuArchitecture.ARM64) {
+                    FormLabel("Perfil Box64/Box86")
+                    ChoiceGrid(Box64Preset.entries.map { it.label to it }, box64Preset, onSelect = { box64Preset = it })
                 }
 
                 FormLabel("Opções de vídeo e compatibilidade")
@@ -354,6 +377,9 @@ fun CreateEnvironmentDialog(
                         fsyncEnabled = fsyncEnabled,
                         wow64Enabled = wow64Enabled,
                         winePreset = winePreset,
+                        box64Preset = box64Preset,
+                        graphicsMemoryMb = graphicsMemoryMb,
+                        fpsLimit = fpsLimit,
                         locale = locale,
                         environmentVariables = environmentVariables,
                         sharedFolderPath = sharedFolderPath
