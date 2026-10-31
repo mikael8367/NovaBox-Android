@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -135,7 +136,7 @@ private fun NovaBoxApp() {
 @Composable
 private fun HomeScreen(onOpenContainers: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().background(Background).padding(24.dp),
+        modifier = Modifier.fillMaxSize().background(Background).statusBarsPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Spacer(Modifier.height(12.dp))
@@ -186,7 +187,7 @@ private fun ContainersScreen(containers: List<String>, onAdd: (String) -> Unit) 
     var name by remember { mutableStateOf("") }
 
     Column(
-        Modifier.fillMaxSize().background(Background).padding(22.dp),
+        Modifier.fillMaxSize().background(Background).statusBarsPadding().padding(22.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("Containers", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
@@ -249,7 +250,7 @@ private fun ContainersScreen(containers: List<String>, onAdd: (String) -> Unit) 
 @Composable
 private fun InfoScreen(title: String, subtitle: String) {
     Column(
-        Modifier.fillMaxSize().background(Background).padding(24.dp),
+        Modifier.fillMaxSize().background(Background).statusBarsPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(title, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
