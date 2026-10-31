@@ -42,14 +42,14 @@ O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink
 
 ### Instalador verificado disponível
 
-- **DXVK 3.1.1**: pacote oficial do projeto DXVK, baixado por HTTPS a partir da página de releases do upstream.
+- **DXVK 3.1.1**: pacote da [release oficial do projeto DXVK](https://github.com/doitsujin/dxvk/releases/tag/v3.1.1), baixado por HTTPS. A licença zlib/libpng é preservada quando presente no arquivo.
 - O instalador exige o tamanho publicado (18.041.512 bytes) e o SHA-256 fixado no catálogo.
 - O download mostra bytes reais recebidos e pode ser cancelado.
 - O extrator TAR.GZ rejeita caminhos absolutos, `..`, links e tipos de entrada não permitidos. Só extrai as DLLs listadas no manifesto, limita a expansão e valida todos os arquivos necessários.
-- A instalação ocorre em uma pasta temporária. A pasta anterior é preservada até a nova instalação passar pelas validações e ser movida para o destino.
+- Os arquivos são preparados em uma pasta temporária. A pasta anterior é preservada até a nova preparação passar pelas validações e ser movida para o destino.
 - Um arquivo incompleto, com hash incorreto ou com estrutura diferente é descartado; ele nunca é marcado como instalado.
 
-**Limitações do DXVK:** o pacote prepara as DLLs; não instala Wine, não fornece Vulkan e não inicia jogos sozinho. O upstream não declara suporte oficial ao Android, portanto a integração é experimental e depende de uma pilha Vulkan funcional e de Wine compatível. O aparelho também pode ser considerado incompatível pela verificação de recursos do Android.
+**Limitações do DXVK:** o pacote apenas armazena as DLLs no diretório privado do motor; ainda não as registra automaticamente em um prefixo Wine, não instala Wine, não fornece Vulkan e não inicia jogos sozinho. O upstream não declara suporte oficial ao Android, portanto a integração é experimental e depende de uma pilha Vulkan funcional e de Wine compatível. O aparelho também pode ser considerado incompatível pela verificação de recursos do Android.
 
 ### Motores ainda sem instalador
 
