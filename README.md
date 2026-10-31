@@ -36,6 +36,12 @@ As opções novas são salvas por ambiente e ambientes antigos recebem valores p
 
 Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. Windows/Wine está configurado para compartilhar a rede do Android hospedeiro quando o runtime estiver ativo. Android virtual usa o modo NAT como configuração desejada, mas precisa do encaminhamento de rede do QEMU para funcionar.
 
+## Biblioteca de programas e diagnóstico
+
+A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Nenhuma permissão ampla de armazenamento é solicitada.
+
+A biblioteca não executa programas ainda. Para execução gráfica real, ainda são necessários Wine e Box64 ARM64 validados, prefixo Wine por ambiente, servidor/display gráfico, entrada de mouse e teclado, áudio, integração de clipboard e ciclo de vida de processos. O cartão de diagnóstico nas configurações mostra modelo/Android, ABI, RAM, espaço livre, OpenGL ES e presença da feature Vulkan; o relatório pode ser copiado para suporte.
+
 ## Motores, instaladores e limitações atuais
 
 O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências.
