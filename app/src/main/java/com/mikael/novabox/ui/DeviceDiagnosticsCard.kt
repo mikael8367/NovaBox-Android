@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.StatFs
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,7 @@ fun DeviceDiagnosticsCard() {
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(NovaPanelRaised)
+                    .clickable { refresh++ }
                     .padding(horizontal = 9.dp, vertical = 6.dp)
             )
         }
@@ -66,7 +68,41 @@ fun DeviceDiagnosticsCard() {
             modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color(0xFF203326))
+                .clickable {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Diagnóstico NovaBox", report))
+                    Toast.makeText(context, "Relatório copiado.", Toast.LENGTH_SHORT).show()
+                }
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         )
     }
+}
+
+private fun buildDeviceReport(context: Context): String {
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+    val memory = ActivityManager.MemoryInfo()
+    activityManager?.getMemoryInfo(memory)
+    val totalRam = memory.totalMem / 1_048_576L
+    val availableRam = memory.availMem / 1_048_576L
+    val storage = runCatching { StatFs(context.filesDir.absolutePath).availableBytes / 1_048_576L }.getOrDefault(0L)
+    val vulkanFeature = context.packageManager.getSystemAvailableFeatures()
+        .firstOrNull { it.name == PackageManager.FEATURE_VULKAN_HARDWARE_VERSION }
+    val glVersion = activityManager?.deviceConfigurationInfo?.reqGlEsVersion ?: 0
+    val glText = if (glVersion > 0) "${glVersion shr 16}.${glVersion and 0xffff}" else "não informado"
+    val versionName = runCatching {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "desconhecida"
+    }.getOrDefault("desconhecida")
+
+    return listOf(
+        "Dispositivo: ${Build.MANUFACTURER} ${Build.MODEL}",
+        "Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+        "Hardware/board: ${Build.HARDWARE} / ${Build.BOARD}",
+        "ABIs: ${Build.SUPPORTED_ABIS.joinToString()}",
+        "Núcleos lógicos: ${Runtime.getRuntime().availableProcessors()}",
+        "RAM: ${totalRam} MiB total • ${availableRam} MiB disponível",
+        "Armazenamento livre no app: ${storage} MiB",
+        "OpenGL ES informado pelo sistema: $glText",
+        "Vulkan feature: ${if (vulkanFeature != null) "presente (versão ${vulkanFeature.version})" else "não anunciado"}",
+        "NovaBox: $versionName"
+    ).joinToString("\n")
 }
