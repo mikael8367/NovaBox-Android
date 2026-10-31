@@ -118,7 +118,7 @@ fun CreateEnvironmentDialog(
     var androidBootAnimationEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidBootAnimationEnabled ?: true) }
     var startupArguments by rememberSaveable(key) { mutableStateOf(initialConfig?.startupArguments.orEmpty()) }
     var dllOverrides by rememberSaveable(key) { mutableStateOf(initialConfig?.dllOverrides.orEmpty()) }
-    var advanced by rememberSaveable(key) { mutableStateOf(false) }
+    var settingsSection by rememberSaveable(key) { mutableStateOf("Sistema") }
     var error by remember { mutableStateOf<String?>(null) }
 
     val profiles = OsCatalog.byFamily(family)
@@ -266,6 +266,18 @@ fun CreateEnvironmentDialog(
                 warning = selectedProfile.engine == EngineType.FULL_SYSTEM_VIRTUALIZATION || selectedProfile.engine == EngineType.UNSUPPORTED
             )
 
+            FormLabel("SEÇÕES DE CONFIGURAÇÃO")
+            val sections = buildList {
+                add("Sistema")
+                add("Desempenho")
+                if (family == OsFamily.WINDOWS) add("Windows")
+                if (family == OsFamily.ANDROID) add("Android")
+                add("Avançado")
+            }
+            if (settingsSection !in sections) settingsSection = "Sistema"
+            ChoiceGrid(sections.map { it to it }, settingsSection, onSelect = { settingsSection = it })
+
+            if (settingsSection == "Sistema") {
             if (family == OsFamily.WINDOWS || family == OsFamily.ANDROID) {
                 FormLabel("Conexão com a Internet")
                 ChoiceGrid(
@@ -331,6 +343,8 @@ fun CreateEnvironmentDialog(
                 onSelect = { dpi = it }
             )
 
+            }
+            if (settingsSection == "Desempenho") {
             FormLabel("Limite de FPS: $fpsLimit")
             ChoiceGrid(
                 options = ContainerConfig.supportedFpsLimits.map { "$it FPS" to it },
@@ -356,9 +370,23 @@ fun CreateEnvironmentDialog(
                 InfoNotice("Atenção ao driver", "Turnip foi feito para GPUs Qualcomm Adreno compatíveis. Em outras GPUs, escolha Automático ou outro backend.", warning = true)
             }
 
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(13.dp)).background(NovaPanelRaised)
-                    .clickable { advanced = !advanced }.padding(13.dp),
+            }
+            if (settingsSection == "Avançado") {
+            FormLabel("Áudio")
+            ChoiceGrid(AudioMode.entries.map { it.label to it }, audio, onSelect = { audio = it })
+            if (family != OsFamily.WINDOWS && family != OsFamily.ANDROID) {
+                FormLabel("Rede")
+                ChoiceGrid(NetworkMode.entries.map { it.label to it }, network, onSelect = { network = it })
+            }
+            FormLabel(if (family == OsFamily.ANDROID) "Controle de toque do Android convidado" else "Controle do mouse")
+            ChoiceGrid(MouseMode.entries.map { it.label to it }, mouseMode, onSelect = { mouseMode = it })
+            if (family != OsFamily.ANDROID) {
+                FormLabel("Sensibilidade do mouse: $mouseSensitivity / 10")
+                Slider(value = mouseSensitivity.toFloat(), onValueChange = { mouseSensitivity = it.toInt().coerceIn(1, 10) }, valueRange = 1f..10f, steps = 8)
+            }
+            FormLabel("Idioma do ambiente")
+            ChoiceGrid(listOf("Português" to "pt_BR", "Inglês" to "en_US", "Espanhol" to "es_ES", "Francês" to "fr_FR", "Alemão" to "de_DE"), locale, onSelect = { locale = it })
+            FormLabel("Pasta compartilhada (caminho opcional)")
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -368,7 +396,7 @@ fun CreateEnvironmentDialog(
                 Icon(if (advanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null, tint = NovaGreen)
             }
 
-            if (advanced) {
+            if (settingsSection == "Desempenho") {
                 FormLabel("Perfil de desempenho")
                 ChoiceGrid(PerformanceProfile.entries.map { it.label to it }, performanceProfile, onSelect = { performanceProfile = it })
                 FormLabel("Orientação da tela")
@@ -380,33 +408,10 @@ fun CreateEnvironmentDialog(
                 SwitchSetting("Teclado virtual/toque", touchKeyboardEnabled) { touchKeyboardEnabled = it }
                 SwitchSetting("Aceleração gráfica (quando disponível)", gpuAccelerationEnabled) { gpuAccelerationEnabled = it }
                 SwitchSetting("Captura do mouse", mouseCaptureEnabled) { mouseCaptureEnabled = it }
+            }
 
-                FormLabel("Áudio")
-                ChoiceGrid(AudioMode.entries.map { it.label to it }, audio, onSelect = { audio = it })
-
-                if (family != OsFamily.WINDOWS && family != OsFamily.ANDROID) {
-                    FormLabel("Rede")
-                    ChoiceGrid(NetworkMode.entries.map { it.label to it }, network, onSelect = { network = it })
-                }
-
-                FormLabel(if (family == OsFamily.ANDROID) "Controle de toque do Android convidado" else "Controle do mouse")
-                ChoiceGrid(MouseMode.entries.map { it.label to it }, mouseMode, onSelect = { mouseMode = it })
-                if (family != OsFamily.ANDROID) {
-                    FormLabel("Sensibilidade do mouse: $mouseSensitivity / 10")
-                    Slider(
-                        value = mouseSensitivity.toFloat(),
-                        onValueChange = { mouseSensitivity = it.toInt().coerceIn(1, 10) },
-                        valueRange = 1f..10f,
-                        steps = 8
-                    )
-                }
-
-                FormLabel("Idioma do ambiente")
-                ChoiceGrid(
-                    listOf("Português" to "pt_BR", "Inglês" to "en_US", "Espanhol" to "es_ES", "Francês" to "fr_FR", "Alemão" to "de_DE"),
-                    locale,
-                    onSelect = { locale = it }
-                )
+            if (settingsSection == "Windows") {
+                FormLabel("Configurações do Windows / Wine")
 
                 if (selectedProfile.engine == EngineType.WINE_COMPATIBILITY) {
                     FormLabel("Versão do Wine desejada")
@@ -472,7 +477,8 @@ fun CreateEnvironmentDialog(
                     )
                 }
 
-                if (family == OsFamily.ANDROID) {
+            }
+            if (settingsSection == "Android" && family == OsFamily.ANDROID) {
                     FormLabel("Personalização do Android convidado")
                     SwitchSetting("Animações do sistema", androidAnimationsEnabled) { androidAnimationsEnabled = it }
                     SwitchSetting("Janelas múltiplas", androidMultiWindowEnabled) { androidMultiWindowEnabled = it }
@@ -483,6 +489,8 @@ fun CreateEnvironmentDialog(
                     SwitchSetting("Animação de inicialização", androidBootAnimationEnabled) { androidBootAnimationEnabled = it }
                 }
 
+            }
+            if (settingsSection == "Avançado") {
                 FormLabel("Variáveis de ambiente (opcional)")
                 OutlinedTextField(
                     value = environmentVariables,
@@ -523,6 +531,7 @@ fun CreateEnvironmentDialog(
                 )
             }
 
+            }
             error?.let { Text(it, color = Color(0xFFFF8A80), fontSize = 11.sp) }
 
             PrimaryAction(
