@@ -72,6 +72,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
     ): BundleInstallResult {
         var stage: File? = null
         val downloads = mutableListOf<File>()
+        val jobContext = kotlinx.coroutines.currentCoroutineContext()
         try {
             if (!runtimes.exists() && !runtimes.mkdirs()) {
                 throw IOException("Não foi possível criar a pasta de runtimes.")
@@ -88,11 +89,14 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
             for (asset in WinlatorRuntimeManifest.assets) {
                 val archive = File(app.cacheDir, "novabox-${asset.name}-${UUID.randomUUID()}.part")
                 downloads += archive
+                onProgress(BundleInstallProgress(asset.name, 0L, asset.size, "download"))
                 downloadAndVerify(asset, archive) { received ->
                     onProgress(BundleInstallProgress(asset.name, received, asset.size, "download"))
                 }
                 onProgress(BundleInstallProgress(asset.name, asset.size, asset.size, "extração"))
-                SafeZstdTarExtractor.extract(archive, stagingDirectory, asset.maxExpandedBytes)
+                SafeZstdTarExtractor.extract(archive, stagingDirectory, asset.maxExpandedBytes) {
+                    jobContext.ensureActive()
+                }
                 archive.delete()
                 downloads.remove(archive)
             }
@@ -117,6 +121,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
                     "box64=0.4.4\n"
             )
 
+            jobContext.ensureActive()
             val backup = File(runtimes, ".rootfs-backup-${UUID.randomUUID()}")
             if (targetRoot.exists() && !targetRoot.renameTo(backup)) {
                 throw IOException("Não foi possível preservar o runtime anterior.")
@@ -170,6 +175,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
                 val declared = connection.contentLengthLong
                 if (declared > 0 && declared != asset.size) throw IOException("Tamanho publicado divergente em ${asset.name}.")
                 var total = 0L
+                var lastReported = 0L
                 BufferedInputStream(connection.inputStream).use { input ->
                     FileOutputStream(destination).buffered().use { output ->
                         val buffer = ByteArray(64 * 1024)
@@ -181,7 +187,10 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
                             if (total > asset.size) throw IOException("O download excedeu o tamanho esperado.")
                             digest.update(buffer, 0, count)
                             output.write(buffer, 0, count)
-                            onProgress(total)
+                            if (total - lastReported >= 256L * 1024L || total == asset.size) {
+                                lastReported = total
+                                onProgress(total)
+                            }
                         }
                     }
                 }
@@ -198,12 +207,18 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
 
 /** Extracts tar+zstd without accepting traversal, device nodes, FIFOs or escaping links. */
 private object SafeZstdTarExtractor {
-    fun extract(archive: File, destination: File, maxExpandedBytes: Long) {
+    fun extract(
+        archive: File,
+        destination: File,
+        maxExpandedBytes: Long,
+        checkCancelled: () -> Unit
+    ) {
         val root = destination.canonicalFile.toPath()
         var expanded = 0L
         ZstdInputStream(archive.inputStream().buffered()).use { zstd ->
             TarArchiveInputStream(zstd).use { tar ->
                 while (true) {
+                    checkCancelled()
                     val entry = tar.nextTarEntry ?: break
                     val relative = RuntimeArchivePathPolicy.safeEntryPath(entry.name) ?: throw IOException("Caminho inválido no pacote.")
                     if (relative.isEmpty()) continue
@@ -236,6 +251,7 @@ private object SafeZstdTarExtractor {
                                 val buffer = ByteArray(64 * 1024)
                                 var remaining = entry.size
                                 while (remaining > 0) {
+                                    checkCancelled()
                                     val count = tar.read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
                                     if (count < 0) throw IOException("Arquivo TAR truncado.")
                                     out.write(buffer, 0, count)
