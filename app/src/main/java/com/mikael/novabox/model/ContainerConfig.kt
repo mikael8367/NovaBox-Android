@@ -103,6 +103,12 @@ enum class WinePreset(val label: String) {
     GE("Wine-GE")
 }
 
+enum class Box64Preset(val label: String) {
+    COMPATIBILITY("Compatibilidade"),
+    BALANCED("Equilibrado"),
+    PERFORMANCE("Desempenho")
+}
+
 data class ContainerConfig(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
@@ -126,6 +132,9 @@ data class ContainerConfig(
     val fsyncEnabled: Boolean = false,
     val wow64Enabled: Boolean = true,
     val winePreset: WinePreset = WinePreset.STABLE,
+    val box64Preset: Box64Preset = Box64Preset.BALANCED,
+    val graphicsMemoryMb: Int = 512,
+    val fpsLimit: Int = 60,
     val locale: String = "pt_BR",
     val environmentVariables: String = "",
     val sharedFolderPath: String = ""
@@ -141,6 +150,8 @@ data class ContainerConfig(
         if (cpuCores !in 1..8) return "A quantidade de núcleos deve ficar entre 1 e 8."
         if (diskGb !in 2..128) return "O armazenamento deve ficar entre 2 GB e 128 GB."
         if (dpi !in 80..240) return "O DPI deve ficar entre 80 e 240."
+        if (graphicsMemoryMb !in 128..2048) return "A memória gráfica virtual deve ficar entre 128 MB e 2048 MB."
+        if (fpsLimit !in supportedFpsLimits) return "Selecione um limite de FPS válido."
         if (resolution !in supportedResolutions) return "Selecione uma resolução válida."
         if (environmentVariables.length > 2048) return "As variáveis de ambiente ultrapassaram 2048 caracteres."
         if (sharedFolderPath.length > 512) return "O caminho da pasta compartilhada é muito longo."
@@ -151,5 +162,6 @@ data class ContainerConfig(
     companion object {
         val supportedResolutions = listOf("800x600", "960x540", "1024x768", "1280x720", "1366x768", "1600x900", "1920x1080")
         val supportedLocales = listOf("pt_BR", "en_US", "es_ES", "fr_FR", "de_DE")
+        val supportedFpsLimits = listOf(30, 45, 60, 90, 120)
     }
 }
