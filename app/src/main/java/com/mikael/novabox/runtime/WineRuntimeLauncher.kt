@@ -29,7 +29,20 @@ class WineRuntimeLauncher(context: Context) {
     @Throws(IOException::class)
     fun initializePrefix(config: ContainerConfig): Process {
         val workspace = validateWorkspace(config)
-        return start(config, workspace, listOf("--init"))
+        val process = start(config, workspace, listOf("--init"))
+        Thread({
+            try {
+                if (process.waitFor() == 0) {
+                    WineWorkspaceManager(appContext).markWineBootCompleted(config.id)
+                }
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
+        }, "NovaBox-WineBoot-${config.id}").apply {
+            isDaemon = true
+            start()
+        }
+        return process
     }
 
     @Throws(IOException::class)
@@ -46,6 +59,9 @@ class WineRuntimeLauncher(context: Context) {
             throw IOException("Nome interno do programa inválido.")
         }
         val workspace = validateWorkspace(config)
+        if (WineWorkspaceManager(appContext).inspect(config).state != WineWorkspaceState.WINE_INITIALIZED) {
+            throw IOException("Inicialize o prefixo Wine antes de executar programas.")
+        }
         return start(config, workspace, listOf(stored.absolutePath))
     }
 

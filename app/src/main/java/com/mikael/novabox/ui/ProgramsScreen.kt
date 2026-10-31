@@ -50,6 +50,7 @@ fun ProgramsScreen(
     programs: List<ProgramEntry>,
     workspaceStatuses: Map<String, WineWorkspaceStatus>,
     onPrepareWorkspace: (ContainerConfig) -> Unit,
+    onInitializePrefix: (ContainerConfig) -> Unit,
     onImport: (ContainerConfig) -> Unit,
     onDelete: (ProgramEntry) -> Unit,
     onVerify: (ProgramEntry) -> Unit
@@ -98,11 +99,12 @@ fun ProgramsScreen(
                         }
                         if (config.profile?.engine == EngineType.WINE_COMPATIBILITY) {
                             val workspace = workspaceStatuses[config.id]
+                            val initialized = workspace?.state == WineWorkspaceState.WINE_INITIALIZED
                             val prepared = workspace?.state == WineWorkspaceState.WORKSPACE_PREPARED
                             InfoNotice(
-                                title = if (prepared) "Estrutura Wine preparada" else "Ambiente Wine",
-                                body = workspace?.message ?: "Prepare a estrutura privada deste ambiente. O Wine ainda precisará inicializar o prefixo quando o runtime estiver disponível.",
-                                warning = !prepared
+                                title = if (initialized) "Prefixo Wine inicializado" else if (prepared) "Estrutura Wine preparada" else "Ambiente Wine",
+                                body = workspace?.message ?: "Prepare a estrutura privada deste ambiente e inicialize o prefixo com o runtime instalado.",
+                                warning = !initialized
                             )
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp))
@@ -112,11 +114,22 @@ fun ProgramsScreen(
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Text(
-                                    if (prepared) "Verificar estrutura" else "Preparar estrutura Wine",
+                                    if (prepared || initialized) "Verificar estrutura" else "Preparar estrutura Wine",
                                     color = NovaGreen,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold
                                 )
+                            }
+                            if (prepared && !initialized) {
+                                Row(
+                                    Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp))
+                                        .background(Color(0xFF203326)).clickable { onInitializePrefix(config) }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text("Inicializar prefixo Wine", color = NovaGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                         Row(

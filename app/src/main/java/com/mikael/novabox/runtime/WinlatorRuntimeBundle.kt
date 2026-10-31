@@ -129,7 +129,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
             stage = null
             backup.deleteRecursively()
             onProgress(BundleInstallProgress("concluído", 1, 1, "concluído"))
-            BundleInstallResult.Installed
+            return BundleInstallResult.Installed
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled
         } catch (error: Exception) {

@@ -81,6 +81,7 @@ import com.mikael.novabox.model.OsFamily
 import com.mikael.novabox.model.RuntimeId
 import com.mikael.novabox.runtime.EngineAvailability
 import com.mikael.novabox.runtime.RuntimeEngine
+import com.mikael.novabox.runtime.WineRuntimeLauncher
 import com.mikael.novabox.runtime.WineWorkspaceManager
 import com.mikael.novabox.runtime.WineWorkspaceStatus
 
@@ -242,6 +243,28 @@ fun NovaBoxApp() {
                                         }
                                         workspaceStatuses[config.id] = status
                                         Toast.makeText(context, status.message, Toast.LENGTH_LONG).show()
+                                    }
+                                },
+                                onInitializePrefix = { config ->
+                                    scope.launch {
+                                        try {
+                                            val exitCode = withContext(Dispatchers.IO) {
+                                                WineRuntimeLauncher(context).initializePrefix(config).waitFor()
+                                            }
+                                            val status = withContext(Dispatchers.IO) {
+                                                if (exitCode == 0) wineWorkspaceManager.markWineBootCompleted(config.id)
+                                                wineWorkspaceManager.inspect(config)
+                                            }
+                                            workspaceStatuses[config.id] = status
+                                            Toast.makeText(
+                                                context,
+                                                if (exitCode == 0 && status.state.name == "WINE_INITIALIZED") "Prefixo Wine inicializado."
+                                                else "wineboot terminou com código $exitCode. Confira o log do ambiente.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } catch (error: Exception) {
+                                            Toast.makeText(context, error.message ?: "Não foi possível inicializar o Wine.", Toast.LENGTH_LONG).show()
+                                        }
                                     }
                                 },
                                 onImport = { config ->

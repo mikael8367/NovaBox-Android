@@ -18,6 +18,7 @@ object WineWorkspacePolicy {
 enum class WineWorkspaceState {
     NOT_PREPARED,
     WORKSPACE_PREPARED,
+    WINE_INITIALIZED,
     INVALID
 }
 
@@ -71,6 +72,26 @@ class WineWorkspaceManager(context: Context) {
                 if (!directory.isDirectory) throw IOException("O caminho $relative não é uma pasta.")
             }
 
+            val metadataFile = File(workspace, "workspace.json")
+            val existing = if (metadataFile.isFile) runCatching {
+                JSONObject(metadataFile.readText(Charsets.UTF_8))
+            }.getOrNull() else null
+            if (existing != null &&
+                existing.optString("environmentId") == config.id &&
+                existing.optString("state") == "WINE_INITIALIZED" &&
+                existing.optBoolean("wineBootCompleted", false)
+            ) {
+                existing.put("environmentName", config.name)
+                    .put("profileId", config.osProfileId)
+                    .put("architecture", config.architecture.name)
+                writeMetadata(workspace, existing)
+                return WineWorkspaceStatus(
+                    WineWorkspaceState.WINE_INITIALIZED,
+                    "Prefixo Wine inicializado e validado.",
+                    workspace
+                )
+            }
+
             val metadata = JSONObject()
                 .put("schemaVersion", 1)
                 .put("environmentId", config.id)
@@ -79,18 +100,12 @@ class WineWorkspaceManager(context: Context) {
                 .put("architecture", config.architecture.name)
                 .put("state", "WORKSPACE_ONLY")
                 .put("wineBootCompleted", false)
-                .put("createdAt", System.currentTimeMillis())
-            val metadataFile = File(workspace, "workspace.json")
-            val temporary = File(workspace, ".workspace.json.tmp")
-            temporary.writeText(metadata.toString(2), Charsets.UTF_8)
-            if (!temporary.renameTo(metadataFile)) {
-                temporary.delete()
-                throw IOException("Não foi possível salvar os metadados do ambiente.")
-            }
+                .put("createdAt", existing?.optLong("createdAt") ?: System.currentTimeMillis())
+            writeMetadata(workspace, metadata)
 
             WineWorkspaceStatus(
                 WineWorkspaceState.WORKSPACE_PREPARED,
-                "Estrutura privada preparada. Ainda não é um prefixo Wine: falta instalar o Wine e concluir o wineboot.",
+                "Estrutura privada preparada. Execute wineboot para inicializar o prefixo.",
                 workspace
             )
         } catch (error: Exception) {
@@ -98,6 +113,38 @@ class WineWorkspaceManager(context: Context) {
                 WineWorkspaceState.INVALID,
                 error.message ?: "Falha ao preparar o ambiente."
             )
+        }
+    }
+
+    fun markWineBootCompleted(configId: String): Boolean {
+        if (!WineWorkspacePolicy.isSafeEnvironmentId(configId)) return false
+        return runCatching {
+            val canonicalRoot = root.canonicalFile
+            val workspace = File(canonicalRoot, configId).canonicalFile
+            if (!workspace.toPath().startsWith(canonicalRoot.toPath())) return false
+            val metadataFile = File(workspace, "workspace.json")
+            if (!metadataFile.isFile) return false
+            val metadata = JSONObject(metadataFile.readText(Charsets.UTF_8))
+            if (metadata.optInt("schemaVersion") != 1 ||
+                metadata.optString("environmentId") != configId ||
+                metadata.optString("state") != "WORKSPACE_ONLY" ||
+                !File(workspace, "prefix/system.reg").isFile
+            ) return false
+            metadata.put("state", "WINE_INITIALIZED")
+                .put("wineBootCompleted", true)
+                .put("initializedAt", System.currentTimeMillis())
+            writeMetadata(workspace, metadata)
+            true
+        }.getOrDefault(false)
+    }
+
+    private fun writeMetadata(workspace: File, metadata: JSONObject) {
+        val temporary = File(workspace, ".workspace.json.tmp")
+        val destination = File(workspace, "workspace.json")
+        temporary.writeText(metadata.toString(2), Charsets.UTF_8)
+        if (!temporary.renameTo(destination)) {
+            temporary.delete()
+            throw IOException("Não foi possível salvar os metadados do ambiente.")
         }
     }
 
@@ -127,17 +174,35 @@ class WineWorkspaceManager(context: Context) {
             }
             val metadata = JSONObject(metadataFile.readText(Charsets.UTF_8))
             if (metadata.optInt("schemaVersion") != 1 ||
-                metadata.optString("environmentId") != config.id ||
-                metadata.optString("state") != "WORKSPACE_ONLY" ||
-                metadata.optBoolean("wineBootCompleted", true)
+                metadata.optString("environmentId") != config.id
             ) {
                 return WineWorkspaceStatus(WineWorkspaceState.INVALID, "Metadados do ambiente não reconhecidos.")
             }
-            WineWorkspaceStatus(
-                WineWorkspaceState.WORKSPACE_PREPARED,
-                "Estrutura preparada; Wine ainda não inicializou o prefixo.",
-                workspace
-            )
+            when (metadata.optString("state")) {
+                "WORKSPACE_ONLY" -> {
+                    if (metadata.optBoolean("wineBootCompleted", true)) {
+                        WineWorkspaceStatus(WineWorkspaceState.INVALID, "Estado do prefixo inconsistente.")
+                    } else {
+                        WineWorkspaceStatus(
+                            WineWorkspaceState.WORKSPACE_PREPARED,
+                            "Estrutura preparada; execute wineboot para inicializar o prefixo.",
+                            workspace
+                        )
+                    }
+                }
+                "WINE_INITIALIZED" -> {
+                    if (!metadata.optBoolean("wineBootCompleted", false)) {
+                        WineWorkspaceStatus(WineWorkspaceState.INVALID, "Estado do prefixo inconsistente.")
+                    } else {
+                        WineWorkspaceStatus(
+                            WineWorkspaceState.WINE_INITIALIZED,
+                            "Prefixo Wine inicializado.",
+                            workspace
+                        )
+                    }
+                }
+                else -> WineWorkspaceStatus(WineWorkspaceState.INVALID, "Estado do ambiente não reconhecido.")
+            }
         } catch (error: Exception) {
             WineWorkspaceStatus(
                 WineWorkspaceState.INVALID,

@@ -10,30 +10,77 @@ Launcher experimental de ambientes de compatibilidade para Android, com interfac
 - Prévia de desktop com cursor de mouse controlado pelo toque.
 - Interface responsiva e sem imagens ou telas copiadas de outros launchers.
 
-## Motores e runtime Wine/Box64
+## Perfis de sistemas
 
-O NovaBox agora contém um instalador de bundle real baseado nos artefatos publicados pelo projeto Winlator, fixados no commit `8077f374ef2d54127b088de9e8cd7b4af14d9c8b`:
+O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista, 7, 8, 8.1, 10 e 11), distribuições Linux (Ubuntu, Debian, Mint, Fedora, Arch, Manjaro, Alpine, openSUSE, Kali, Raspberry Pi OS e outras), BSD (FreeBSD, OpenBSD, NetBSD e DragonFly BSD), Android virtual (Android 4.4 até 16, Android Go 8–16, AOSP 14–16, Android TV 9–16, Android Automotive 12–16, Wear OS 3–6, Android-x86 32/64-bit, Bliss OS, PrimeOS e ROMs como LineageOS, GrapheneOS, CalyxOS, /e/OS, crDroid, Evolution X, PixelOS, ArrowOS, OmniROM, Paranoid Android, Resurrection Remix, Replicant, iodéOS e DivestOS legado) e outros como FreeDOS, ReactOS, Haiku, Solaris/illumos, OS/2 e BeOS. macOS e ChromeOS aparecem apenas como não suportados.
 
-- Root filesystem Linux/glibc do Winlator.
-- Patches do rootfs.
-- Box64 0.4.4 para host ARM64.
-- Pacote de áudio PulseAudio do Winlator.
-- Verificação de tamanho e Git blob SHA-1 de cada artefato, calculado no formato de objeto Git.
-- Extração TAR+Zstandard com bloqueio de path traversal, links que escapem do rootfs, dispositivos, FIFOs e expansão excessiva.
-- Instalação em staging e troca atômica do rootfs, preservando a versão anterior em caso de falha.
-- Inicialização do Wine por Box64 usando o layout real `/usr/local/bin/box64` e `/opt/wine/bin/wine`.
+**Importante:** selecionar um perfil não baixa nem instala o sistema operacional. O catálogo inclui mais de 50 perfis Android, mas cada um precisa de uma imagem compatível. ROMs como GrapheneOS, LineageOS e outras dependem de builds para dispositivos/arquiteturas específicos e não são garantidas em uma VM genérica.
 
-A primeira instalação exige aproximadamente 1,7 GB livres e baixa os artefatos sob demanda. Os arquivos são provenientes do Winlator; veja `THIRD_PARTY_NOTICES.md` e preserve os avisos de licença que acompanham os componentes.
+## Configurações por ambiente
 
-**Limitação importante:** este bundle fornece a base real Wine/Box64 e permite preparar o prefixo/lançar processos, mas a sessão gráfica completa ainda depende da integração do XServer Android e do backend de entrada/áudio. Não se declara compatibilidade gráfica pronta. O Galaxy A12 usa GPU PowerVR; drivers Turnip/Adreno não são compatíveis com ele.
+- Família e versão do sistema. O catálogo Android possui pesquisa por nome, versão e descrição.
+- Arquitetura do programa.
+- CPU, memória e perfil Box64 configuráveis.
+- Armazenamento virtual.
+- Resolução, DPI, limite de FPS e memória gráfica virtual (parâmetro de perfil, não reserva de VRAM física).
+- Backend gráfico.
+- Áudio, Internet compartilhada (NAT) ou rede desativada e modo de mouse.
+- Tela cheia e desktop virtual.
+- Opções Wine, DXVK, VKD3D-Proton, ESYNC, FSYNC e WoW64.
+- Perfil Box64, idioma, variáveis de ambiente e caminho de pasta compartilhada.
+- Perfil de desempenho (economia/equilibrado/alto desempenho), orientação, tela ligada, contador de FPS, teclado virtual, aceleração gráfica, captura do mouse, área de transferência e compartilhamento de arquivos.
+- Windows/Wine: modo de jogo, ajustes de registro e serviços como opções de perfil, DPI alto, argumentos de inicialização e substituições de DLL.
+- Android convidado: animações, janelas múltiplas, Google Play Services (se a imagem tiver os pacotes), notificações, apps em segundo plano, depuração ADB e animação de boot.
 
-## Linux, Android virtual e outros sistemas
+As opções novas são salvas por ambiente e ambientes antigos recebem valores padrão ao serem carregados. Enquanto Wine/QEMU e os demais motores não consumirem esses parâmetros, elas representam configurações desejadas do perfil — não alterações já aplicadas ao sistema convidado.
 
-Os perfis Linux e Android virtual continuam sendo alvos diferentes: Linux userland precisa de rootfs ARM64 + PRoot e Android virtual precisa de QEMU ARM64 + imagem de sistema convidado compatível. Um perfil salvo não equivale a um sistema instalado. Não são baixadas imagens de ROMs aleatórias ou builds de outros dispositivos como se fossem universais.
+Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. Windows/Wine está configurado para compartilhar a rede do Android hospedeiro quando o runtime estiver ativo. Android virtual usa o modo NAT como configuração desejada, mas precisa do encaminhamento de rede do QEMU para funcionar.
 
-## Programas
+## Workspaces Wine (preparação inicial)
 
-A biblioteca importa EXE/MSI/COM para armazenamento privado, calcula SHA-256 e verifica integridade. A execução gráfica depende do backend de display/entrada.
+Na aba **Programas**, cada perfil Windows/Wine pode criar uma estrutura privada e isolada em `filesDir/wine-workspaces/<environment-id>`. O gerenciador valida o perfil e o identificador, impede saída do diretório raiz por path traversal, cria pastas separadas para prefix, home, temporários, logs e arquivos compartilhados e grava metadados versionados por substituição temporária.
+
+O estado inicial é registrado como `WORKSPACE_ONLY` e `wineBootCompleted=false`. Depois que o bundle Wine/Box64 estiver instalado, a ação **Inicializar prefixo Wine** executa `wineboot --init`; somente quando o processo termina com código zero os metadados passam para `WINE_INITIALIZED`. A criação preserva um prefixo já inicializado, e a exclusão do ambiente também remove sua estrutura privada; se a limpeza falhar, o perfil é preservado.
+
+A inicialização do prefixo e a preparação do processo estão implementadas. A execução gráfica de programas ainda depende da integração de um backend real de display/XServer, entrada de mouse/teclado, áudio e ciclo de vida de processos, seguida de testes em aparelho.
+
+## Biblioteca de programas e diagnóstico
+
+A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Cada item também oferece uma verificação manual de integridade: o NovaBox relê o conteúdo em fluxo, recalcula SHA-256 e compara com o hash registrado na importação. A leitura ocorre em segundo plano para não bloquear a interface. Nenhuma permissão ampla de armazenamento é solicitada.
+
+O bundle Wine/Box64 e a camada de preparação do prefixo estão disponíveis. A biblioteca ainda não oferece execução gráfica por botão: faltam o XServer/display Android, integração de entrada e áudio, clipboard e ciclo de vida completo da sessão. O cartão de diagnóstico nas configurações mostra modelo/Android, ABI, RAM, espaço livre, OpenGL ES e presença da feature Vulkan; o relatório pode ser copiado para suporte.
+
+## Motores, instaladores e limitações atuais
+
+O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências. Para binários executáveis nativos, a validação também lê o cabeçalho ELF e confere classe, endianness e arquitetura (ARM64, ARM32, x86 ou x86-64) com a ABI permitida pelo componente. Assim, um arquivo x86-64 não é aceito como executável ARM64 apenas por ter nome e permissão corretos. Essa checagem não prova compatibilidade com o linker/Bionic, dependências dinâmicas, SELinux ou capacidade de iniciar uma sessão.
+
+### Instalador verificado disponível
+
+- **DXVK 3.1.1**: pacote da [release oficial do projeto DXVK](https://github.com/doitsujin/dxvk/releases/tag/v3.1.1), baixado por HTTPS. A licença zlib/libpng é preservada quando presente no arquivo.
+- O instalador exige o tamanho publicado (18.041.512 bytes) e o SHA-256 fixado no catálogo.
+- O download mostra bytes reais recebidos e pode ser cancelado.
+- O extrator TAR.GZ rejeita caminhos absolutos, `..`, links e tipos de entrada não permitidos. Só extrai as DLLs listadas no manifesto, limita a expansão e valida todos os arquivos necessários.
+- Os arquivos são preparados em uma pasta temporária. A pasta anterior é preservada até a nova preparação passar pelas validações e ser movida para o destino.
+- Um arquivo incompleto, com hash incorreto ou com estrutura diferente é descartado; ele nunca é marcado como instalado.
+
+**Limitações do DXVK:** o pacote apenas armazena as DLLs no diretório privado do motor; ainda não as registra automaticamente em um prefixo Wine, não instala Wine, não fornece Vulkan e não inicia jogos sozinho. O upstream não declara suporte oficial ao Android, portanto a integração é experimental e depende de uma pilha Vulkan funcional e de Wine compatível. O aparelho também pode ser considerado incompatível pela verificação de recursos do Android.
+
+### Bundle Wine + Box64 disponível
+
+- **Wine + Box64 0.4.4**: bundle baseado nos artefatos publicados pelo projeto Winlator, com rootfs Linux/glibc, patches, Box64 ARM64 e PulseAudio.
+- Os arquivos são fixados no commit upstream `8077f374ef2d54127b088de9e8cd7b4af14d9c8b` e verificados por tamanho e Git blob SHA-1 antes da extração.
+- O instalador suporta TAR+Zstandard, rejeita traversal, links que escapem do rootfs, dispositivos e FIFOs, limita a expansão e prepara tudo em staging antes da troca atômica.
+- A instalação exige aproximadamente 1,7 GB livres. Os avisos e licenças de terceiros estão em `THIRD_PARTY_NOTICES.md`.
+
+O bundle fornece a base real de Wine/Box64 e inicialização de prefixo; não significa que a sessão Windows gráfica esteja pronta. O backend XServer/display, entrada e áudio ainda não estão integrados.
+
+### Motores ainda sem instalador
+
+PRoot, Box86, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip e VKD3D-Proton continuam no catálogo, mas ainda não têm instaladores Android/ARM64 completos e verificados neste projeto. Linux userland precisa de PRoot e rootfs compatível; Android virtual precisa de QEMU ARM64, firmware/kernel e uma imagem convidada inicializável. Pacotes Linux x86-64 não são tratados como binários Android instaláveis.
+
+Turnip é um driver Vulkan para GPUs Qualcomm Adreno. Ele não é adequado para GPUs PowerVR como a do Samsung Galaxy A12. DXVK, VKD3D-Proton e Zink também exigem Vulkan; a presença do componente no catálogo não garante compatibilidade com o aparelho.
+
+A seleção de perfil não baixa nem instala um sistema operacional. O bundle Wine/Box64 é a única base de runtime completa adicionada nesta etapa; Linux userland, DOS e Android virtual ainda não inicializam. A prévia visual de desktop continua sendo uma demonstração, não uma máquina virtual em execução.
 
 ## Compilação e validação
 
@@ -43,4 +90,10 @@ A biblioteca importa EXE/MSI/COM para armazenamento privado, calcula SHA-256 e v
 - Android SDK 35
 - Gradle 8.9
 
-GitHub Actions compila o Kotlin e executa testes unitários. Nenhum APK é gerado automaticamente.
+O GitHub Actions executa compilação Kotlin e testes unitários do catálogo e das configurações.
+
+Nenhum APK é gerado automaticamente.
+
+## Pacote Android
+
+`com.mikael.novabox`
