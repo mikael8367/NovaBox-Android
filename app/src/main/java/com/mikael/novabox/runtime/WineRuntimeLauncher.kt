@@ -2,20 +2,46 @@ package com.mikael.novabox.runtime
 
 import android.content.Context
 import com.mikael.novabox.data.ProgramEntry
+import com.mikael.novabox.data.ProgramIntegrityVerifier
 import com.mikael.novabox.model.ContainerConfig
 import java.io.File
 import java.io.IOException
 
-/** Builds the same host-ARM64 Box64 -> guest x86_64 Wine chain used by Winlator. */
+/** Builds the host ARM64 -> guest x86_64 Wine process chain used by Winlator. */
 object WineCommandBuilder {
     fun build(box64Executable: String, wineExecutable: String, guestArguments: List<String>): List<String> {
-        require(box64Executable.isNotBlank() && wineExecutable.isNotBlank()) {
-            "Caminho do runtime vazio."
-        }
-        require(guestArguments.isNotEmpty() && guestArguments.none { it.isBlank() }) {
-            "Argumentos do Wine vazios."
-        }
+        require(box64Executable.isNotBlank() && wineExecutable.isNotBlank()) { "Caminho do runtime vazio." }
+        require(guestArguments.isNotEmpty() && guestArguments.none { it.isBlank() }) { "Argumentos do Wine vazios." }
         return listOf(box64Executable, wineExecutable) + guestArguments
+    }
+}
+
+/** Environment parity with Winlator's guest launcher, while keeping each prefix isolated. */
+object WineEnvironmentBuilder {
+    fun build(rootfs: File, workspace: File): Map<String, String> {
+        val wineBin = File(rootfs, "opt/wine/bin").absolutePath
+        val box64Bin = File(rootfs, "usr/local/bin").absolutePath
+        val usrBin = File(rootfs, "usr/bin").absolutePath
+        val x64Libraries = File(rootfs, "lib/x86_64-linux-gnu").absolutePath
+        val x64UsrLibraries = File(rootfs, "usr/lib/x86_64-linux-gnu").absolutePath
+        val env = linkedMapOf(
+            "HOME" to File(workspace, "home").absolutePath,
+            "USER" to "xuser",
+            "TMPDIR" to File(workspace, "tmp").absolutePath,
+            "WINEPREFIX" to File(workspace, "prefix").absolutePath,
+            "PATH" to listOf(wineBin, box64Bin, usrBin).joinToString(File.pathSeparator),
+            "LD_LIBRARY_PATH" to File(rootfs, "usr/lib").absolutePath,
+            "BOX64_LD_LIBRARY_PATH" to listOf(x64Libraries, x64UsrLibraries).joinToString(File.pathSeparator),
+            "BOX64_DYNAREC" to "1",
+            "BOX64_DYNACACHE" to "0",
+            "BOX64_UNITYPLAYER" to "0",
+            "BOX64_NOBANNER" to "1",
+            "WINEDEBUG" to "-all",
+            "DISPLAY" to ":0"
+        )
+        val rcFile = File(rootfs, "etc/config.box64rc")
+        if (rcFile.isFile) env["BOX64_RCFILE"] = rcFile.absolutePath
+        return env
     }
 }
 
@@ -29,34 +55,30 @@ class WineRuntimeLauncher(context: Context) {
     @Throws(IOException::class)
     fun initializePrefix(config: ContainerConfig): Process {
         val workspace = validateWorkspace(config)
-        val process = start(config, workspace, listOf("--init"))
-        Thread({
-            try {
-                if (process.waitFor() == 0) {
-                    WineWorkspaceManager(appContext).markWineBootCompleted(config.id)
-                }
-            } catch (_: InterruptedException) {
-                Thread.currentThread().interrupt()
-            }
-        }, "NovaBox-WineBoot-${config.id}").apply {
-            isDaemon = true
-            start()
-        }
-        return process
+        return start(config, workspace, listOf("--init"))
     }
 
     @Throws(IOException::class)
     fun launchProgram(config: ContainerConfig, entry: ProgramEntry): Process {
         if (entry.containerId != config.id) throw IOException("O programa pertence a outro ambiente.")
-        val programDirectory = File(programsRoot, config.id).canonicalFile
-        val stored = File(programDirectory, entry.storedFileName).canonicalFile
-        if (!stored.toPath().startsWith(programDirectory.toPath()) || !stored.isFile ||
-            stored.length() != entry.sizeBytes
-        ) {
-            throw IOException("Arquivo do programa ausente ou inválido.")
+        if (entry.sizeBytes <= 0L || !entry.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))) {
+            throw IOException("Metadados de integridade do programa inválidos.")
         }
         if (!entry.storedFileName.matches(Regex("^[A-Za-z0-9-]+[.]program$"))) {
             throw IOException("Nome interno do programa inválido.")
+        }
+        val programDirectory = File(programsRoot, config.id).canonicalFile
+        val stored = File(programDirectory, entry.storedFileName).canonicalFile
+        if (!stored.toPath().startsWith(programDirectory.toPath()) || !stored.isFile || stored.length() != entry.sizeBytes) {
+            throw IOException("Arquivo do programa ausente ou inválido.")
+        }
+        val actualHash = try {
+            stored.inputStream().use { ProgramIntegrityVerifier.sha256(it) }
+        } catch (error: Exception) {
+            throw IOException("Não foi possível verificar o arquivo do programa.", error)
+        }
+        if (!actualHash.equals(entry.sha256, ignoreCase = true)) {
+            throw IOException("A integridade do programa falhou. Importe o arquivo novamente.")
         }
         val workspace = validateWorkspace(config)
         if (WineWorkspaceManager(appContext).inspect(config).state != WineWorkspaceState.WINE_INITIALIZED) {
@@ -66,16 +88,10 @@ class WineRuntimeLauncher(context: Context) {
     }
 
     private fun validateWorkspace(config: ContainerConfig): File {
-        if (!WineWorkspacePolicy.isWindowsWineProfile(config)) {
-            throw IOException("O perfil selecionado não é compatível com Wine.")
-        }
-        if (!WineWorkspacePolicy.isSafeEnvironmentId(config.id)) {
-            throw IOException("Identificador do ambiente inválido.")
-        }
+        if (!WineWorkspacePolicy.isWindowsWineProfile(config)) throw IOException("O perfil selecionado não é compatível com Wine.")
+        if (!WineWorkspacePolicy.isSafeEnvironmentId(config.id)) throw IOException("Identificador do ambiente inválido.")
         val workspace = File(workspaces, config.id).canonicalFile
-        if (!workspace.toPath().startsWith(workspaces.canonicalFile.toPath()) ||
-            !File(workspace, "workspace.json").isFile
-        ) {
+        if (!workspace.toPath().startsWith(workspaces.canonicalFile.toPath()) || !File(workspace, "workspace.json").isFile) {
             throw IOException("Prepare a estrutura do ambiente antes de iniciar o Wine.")
         }
         return workspace
@@ -83,13 +99,12 @@ class WineRuntimeLauncher(context: Context) {
 
     @Throws(IOException::class)
     private fun start(config: ContainerConfig, workspace: File, guestArguments: List<String>): Process {
+        config.validate()?.let { throw IOException(it) }
         val box64 = File(rootfs, "usr/local/bin/box64")
         val wine = File(rootfs, "opt/wine/bin/wine")
         val wineboot = File(rootfs, "opt/wine/bin/wineboot")
-        if (!WinlatorRuntimeBundleInstaller(appContext).isInstalled() ||
-            !box64.isFile || !box64.canExecute() ||
-            !wine.isFile || !wineboot.isFile
-        ) {
+        if (!WinlatorRuntimeBundleInstaller(appContext).isInstalled() || !box64.isFile || !box64.canExecute() ||
+            !wine.isFile || !wine.canExecute() || !wineboot.isFile) {
             throw IOException("Runtime real Wine/Box64 incompleto. Instale o bundle oficial antes de executar.")
         }
         val executable = if (guestArguments == listOf("--init")) wineboot else wine
@@ -98,33 +113,19 @@ class WineRuntimeLauncher(context: Context) {
         val prefix = File(workspace, "prefix")
         val temp = File(workspace, "tmp")
         listOf(home, prefix, temp).forEach {
-            if (!it.exists() && !it.mkdirs()) throw IOException("Não foi possível preparar ${it.name}.")
+            if (!it.exists() && !it.mkdirs()) throw IOException("Não foi possível preparar " + it.name + ".")
         }
         val logDirectory = File(workspace, "logs")
         if (!logDirectory.exists() && !logDirectory.mkdirs()) throw IOException("Não foi possível criar os logs.")
         val logFile = File(logDirectory, "wine-session.log")
-
-        val process = ProcessBuilder(command)
-            .directory(workspace)
-            .redirectErrorStream(true)
+        val root = rootfs.canonicalFile
+        val builder = ProcessBuilder(command).directory(root).redirectErrorStream(true)
             .redirectOutput(ProcessBuilder.Redirect.appendTo(logFile))
-        process.environment().apply {
-            put("HOME", home.absolutePath)
-            put("WINEPREFIX", prefix.absolutePath)
-            put("TMPDIR", temp.absolutePath)
-            put("USER", "xuser")
-            put("PATH", "${File(rootfs, "opt/wine/bin").absolutePath}:${File(rootfs, "usr/local/bin").absolutePath}:${File(rootfs, "usr/bin").absolutePath}")
-            put("LD_LIBRARY_PATH", File(rootfs, "usr/lib").absolutePath)
-            put("BOX64_LD_LIBRARY_PATH", "${File(rootfs, "lib/x86_64-linux-gnu").absolutePath}:${File(rootfs, "usr/lib/x86_64-linux-gnu").absolutePath}")
-            put("BOX64_DYNAREC", "1")
-            put("BOX64_NOBANNER", "1")
-            put("WINEDEBUG", "-all")
-            put("DISPLAY", ":0")
-        }
+        builder.environment().putAll(WineEnvironmentBuilder.build(root, workspace))
         return try {
-            process.start()
+            builder.start()
         } catch (error: Exception) {
-            throw IOException("Não foi possível iniciar Box64/Wine: ${error.message ?: "erro desconhecido"}", error)
+            throw IOException("Não foi possível iniciar Box64/Wine: " + (error.message ?: "erro desconhecido"), error)
         }
     }
 }
