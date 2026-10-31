@@ -380,7 +380,13 @@ fun CreateEnvironmentDialog(
                 FormLabel("Orientação da tela")
                 ChoiceGrid(DisplayOrientation.entries.map { it.label to it }, orientation, onSelect = { orientation = it })
                 SwitchSetting("Manter a tela ligada", keepScreenOn) { keepScreenOn = it }
-                SwitchSetting("Mostrar contador de FPS (quando suportado)", showFpsOverlay) { showFpsOverlay = it }
+                SwitchSetting("Mostrar painel de desempenho", showFpsOverlay) { showFpsOverlay = it }
+                Text(
+                    "Exibe FPS da prévia, RAM do celular e do app, CPU, latência da internet, bateria e armazenamento. Dados da VM e GPU dependem da integração do motor.",
+                    color = NovaMuted,
+                    fontSize = 9.sp,
+                    lineHeight = 13.sp
+                )
                 SwitchSetting("Sincronizar área de transferência (quando suportado)", clipboardSyncEnabled) { clipboardSyncEnabled = it }
                 SwitchSetting("Compartilhar arquivos com o Android host (quando suportado)", fileSharingEnabled) { fileSharingEnabled = it }
                 SwitchSetting("Teclado virtual/toque", touchKeyboardEnabled) { touchKeyboardEnabled = it }
