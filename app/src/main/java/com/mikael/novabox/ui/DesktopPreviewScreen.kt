@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.mikael.novabox.input.MouseButton
 import com.mikael.novabox.input.PreviewInputBridge
 import com.mikael.novabox.model.ContainerConfig
+import com.mikael.novabox.model.MouseMode
 
 @Composable
 fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
@@ -102,14 +103,14 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                 .pointerInput(config.id) {
                     detectTapGestures(
                         onTap = { offset ->
-                            if (canvasSize.width > 0 && canvasSize.height > 0) {
+                            if (config.mouseMode == MouseMode.DIRECT && canvasSize.width > 0 && canvasSize.height > 0) {
                                 cursorX = (offset.x / canvasSize.width).coerceIn(0f, 1f)
                                 cursorY = (offset.y / canvasSize.height).coerceIn(0f, 1f)
                             }
                             inputBridge.click(MouseButton.LEFT)
                         },
                         onLongPress = { offset ->
-                            if (canvasSize.width > 0 && canvasSize.height > 0) {
+                            if (config.mouseMode == MouseMode.DIRECT && canvasSize.width > 0 && canvasSize.height > 0) {
                                 cursorX = (offset.x / canvasSize.width).coerceIn(0f, 1f)
                                 cursorY = (offset.y / canvasSize.height).coerceIn(0f, 1f)
                             }
@@ -121,8 +122,14 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         if (canvasSize.width > 0 && canvasSize.height > 0) {
-                            cursorX = (cursorX + dragAmount.x / canvasSize.width).coerceIn(0f, 1f)
-                            cursorY = (cursorY + dragAmount.y / canvasSize.height).coerceIn(0f, 1f)
+                            if (config.mouseMode == MouseMode.DIRECT) {
+                                cursorX = (change.position.x / canvasSize.width).coerceIn(0f, 1f)
+                                cursorY = (change.position.y / canvasSize.height).coerceIn(0f, 1f)
+                            } else {
+                                val sensitivity = config.mouseSensitivity / 5f
+                                cursorX = (cursorX + dragAmount.x / canvasSize.width * sensitivity).coerceIn(0f, 1f)
+                                cursorY = (cursorY + dragAmount.y / canvasSize.height * sensitivity).coerceIn(0f, 1f)
+                            }
                         }
                         inputBridge.movePointer(cursorX, cursorY)
                     }
