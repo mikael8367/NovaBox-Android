@@ -108,6 +108,18 @@ class RuntimeEngine(private val context: Context) {
     fun isComponentInstalled(id: RuntimeId): Boolean =
         componentStatus(id).state == RuntimeComponentState.INSTALLED
 
+    fun componentFilesPresent(id: RuntimeId): Boolean {
+        val definition = RuntimeComponentRegistry.get(id)
+        val directory = runtimeDirectory(id)
+        return definition.requiredFileGroups.all { group ->
+            group.any { relativePath ->
+                val file = File(directory, relativePath)
+                file.isFile && file.length() > 0L &&
+                    (relativePath !in definition.executablePaths || file.canExecute())
+            }
+        }
+    }
+
     fun runtimeDirectory(id: RuntimeId): File =
         File(context.filesDir, "runtimes/${id.name.lowercase()}")
 
