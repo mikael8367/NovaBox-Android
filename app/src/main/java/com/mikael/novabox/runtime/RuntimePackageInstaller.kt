@@ -194,12 +194,30 @@ class RuntimePackageInstaller(private val context: Context) {
     }
 
     private fun validateSpec(spec: RuntimePackageSpec) {
-        require(spec.downloadUrl.startsWith("https://")) { "A origem do pacote precisa usar HTTPS." }
+        require(RuntimePackageCatalog.packageFor(spec.runtimeId) == spec) {
+            "Este pacote não pertence ao catálogo verificado do NovaBox."
+        }
+        val source = URL(spec.downloadUrl)
+        require(source.protocol == "https" && source.host.equals("github.com", ignoreCase = true)) {
+            "A origem do pacote precisa ser o GitHub oficial por HTTPS."
+        }
+        require(source.userInfo == null && source.query == null && source.ref == null) {
+            "A URL do pacote contém parâmetros inesperados."
+        }
         require(spec.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))) { "SHA-256 inválido." }
-        require(spec.expectedSizeBytes > 0L) { "Tamanho do pacote inválido." }
-        require(spec.fileName.endsWith(".tar.gz")) { "Formato de arquivo não suportado." }
+        require(spec.expectedSizeBytes in 1L..(128L * 1024L * 1024L)) { "Tamanho do pacote inválido." }
+        require(spec.maxExpandedBytes in 1L..(512L * 1024L * 1024L)) { "Limite de extração inválido." }
+        require(Regex("^[A-Za-z0-9._-]+[.]tar[.]gz$").matches(spec.fileName)) {
+            "Nome de arquivo não permitido."
+        }
         require(spec.archiveFormat == RuntimeArchiveFormat.TAR_GZ) { "Formato de arquivo não suportado." }
-        require(spec.allowedArchiveFiles.isNotEmpty()) { "O pacote não possui arquivos esperados." }
+        require(Regex("^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$").matches(spec.archiveRootDirectory)) {
+            "Diretório raiz do pacote inválido."
+        }
+        require(isSafeRelativePath(spec.outputDirectory)) { "Destino de instalação inválido." }
+        require(spec.allowedArchiveFiles.isNotEmpty() && spec.allowedArchiveFiles.all(::isSafeRelativePath)) {
+            "Lista de arquivos permitidos inválida."
+        }
         require(spec.requiredArchiveFiles.isNotEmpty() &&
             spec.requiredArchiveFiles.all { it in spec.allowedArchiveFiles }
         ) { "A lista de arquivos obrigatórios do pacote é inválida." }
@@ -229,6 +247,10 @@ class RuntimePackageInstaller(private val context: Context) {
                 digest.update(buffer, 0, read)
             }
         }
-        return digest.digest().joinToString("") { "%02x".format(it) }
+        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
     }
+    private fun isSafeRelativePath(path: String): Boolean =
+        path.isNotBlank() && !path.startsWith("/") && !path.contains('\\') &&
+            !Regex("^[A-Za-z]:").containsMatchIn(path) &&
+            path.split("/").none { it.isBlank() || it == "." || it == ".." }
 }
