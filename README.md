@@ -12,13 +12,13 @@ Launcher experimental de ambientes de compatibilidade para Android, com interfac
 
 ## Perfis de sistemas
 
-O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista, 7, 8, 8.1, 10 e 11), distribuições Linux (Ubuntu, Debian, Mint, Fedora, Arch, Manjaro, Alpine, openSUSE, Kali, Raspberry Pi OS e outras), BSD (FreeBSD, OpenBSD, NetBSD e DragonFly BSD), Android virtual (Android 7.1 até Android 16, Android-x86, Android-x86_64, Bliss OS e PrimeOS) e outros como FreeDOS, ReactOS, Haiku, Solaris/illumos, OS/2 e BeOS. macOS e ChromeOS aparecem apenas como não suportados.
+O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista, 7, 8, 8.1, 10 e 11), distribuições Linux (Ubuntu, Debian, Mint, Fedora, Arch, Manjaro, Alpine, openSUSE, Kali, Raspberry Pi OS e outras), BSD (FreeBSD, OpenBSD, NetBSD e DragonFly BSD), Android virtual (Android 4.4 até 16, Android Go 8–16, AOSP 14–16, Android TV 9–16, Android Automotive 12–16, Wear OS 3–6, Android-x86 32/64-bit, Bliss OS, PrimeOS e ROMs como LineageOS, GrapheneOS, CalyxOS, /e/OS, crDroid, Evolution X, PixelOS, ArrowOS, OmniROM, Paranoid Android, Resurrection Remix, Replicant, iodéOS e DivestOS legado) e outros como FreeDOS, ReactOS, Haiku, Solaris/illumos, OS/2 e BeOS. macOS e ChromeOS aparecem apenas como não suportados.
 
-**Importante:** selecionar um perfil não baixa nem instala o sistema operacional. Os perfis descrevem o tipo de ambiente e a cadeia de compatibilidade necessária.
+**Importante:** selecionar um perfil não baixa nem instala o sistema operacional. O catálogo inclui mais de 50 perfis Android, mas cada um precisa de uma imagem compatível. ROMs como GrapheneOS, LineageOS e outras dependem de builds para dispositivos/arquiteturas específicos e não são garantidas em uma VM genérica.
 
 ## Configurações por ambiente
 
-- Família e versão do sistema.
+- Família e versão do sistema. O catálogo Android possui pesquisa por nome, versão e descrição.
 - Arquitetura do programa.
 - CPU, memória e perfil Box64 configuráveis.
 - Armazenamento virtual.
