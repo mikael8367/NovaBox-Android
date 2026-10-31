@@ -1,6 +1,8 @@
 package com.mikael.novabox.ui
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -11,7 +13,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -62,8 +63,11 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
     val inputBridge = remember(config.id) {
         PreviewInputBridge { message -> lastInput = message }
     }
-    val context = LocalContext.current
-    val activity = context as? Activity
+    var currentContext: Context = LocalContext.current
+    while (currentContext is ContextWrapper && currentContext !is Activity) {
+        currentContext = currentContext.baseContext
+    }
+    val activity = currentContext as? Activity
     val view = LocalView.current
 
     DisposableEffect(activity, view) {
