@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.TouchApp
@@ -77,7 +78,12 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
             }
             Column(Modifier.weight(1f).padding(start = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(config.name, color = NovaText, fontSize = 15.sp)
-                Text("${config.profile?.name ?: "Ambiente"} • prévia de desktop", color = NovaMuted, fontSize = 10.sp)
+                Text(
+                    "${config.profile?.name ?: "Ambiente"} • " +
+                        if (config.profile?.family == com.mikael.novabox.model.OsFamily.ANDROID) "prévia Android virtual" else "prévia de desktop",
+                    color = NovaMuted,
+                    fontSize = 10.sp
+                )
             }
             Icon(Icons.Default.Mouse, contentDescription = null, tint = NovaGreen, modifier = Modifier.size(23.dp))
         }
@@ -88,7 +94,11 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
         ) {
             Icon(Icons.Default.TouchApp, contentDescription = null, tint = NovaWarning, modifier = Modifier.size(16.dp))
             Text(
-                "Modo de prévia: cursor controlado pelo toque. O motor Windows/Linux ainda não está conectado.",
+                if (config.profile?.family == com.mikael.novabox.model.OsFamily.ANDROID) {
+                    "Prévia visual de Android convidado. QEMU e a imagem Android ainda não estão conectados; nenhuma VM foi iniciada."
+                } else {
+                    "Modo de prévia: cursor controlado pelo toque. O motor Windows/Linux ainda não está conectado."
+                },
                 color = NovaWarning,
                 fontSize = 9.sp,
                 lineHeight = 13.sp,
@@ -157,9 +167,22 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(7.dp)
                     ) {
-                        Icon(Icons.Default.Mouse, contentDescription = null, tint = NovaGreen, modifier = Modifier.size(26.dp))
-                        Text("Área de trabalho", color = Color.White, fontSize = 15.sp)
-                        Text("O cursor acompanha seu dedo", color = Color(0xFFB5C1CB), fontSize = 10.sp)
+                        Icon(
+                            if (config.profile?.family == com.mikael.novabox.model.OsFamily.ANDROID) Icons.Default.Android else Icons.Default.Mouse,
+                            contentDescription = null,
+                            tint = NovaGreen,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Text(
+                            if (config.profile?.family == com.mikael.novabox.model.OsFamily.ANDROID) "Tela inicial Android" else "Área de trabalho",
+                            color = Color.White,
+                            fontSize = 15.sp
+                        )
+                        Text(
+                            if (config.profile?.family == com.mikael.novabox.model.OsFamily.ANDROID) "Prévia da máquina Android convidada" else "O cursor acompanha seu dedo",
+                            color = Color(0xFFB5C1CB),
+                            fontSize = 10.sp
+                        )
                     }
                     Canvas(Modifier.fillMaxSize()) {
                         val x = size.width * cursorX
