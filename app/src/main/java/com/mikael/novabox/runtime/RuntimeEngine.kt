@@ -76,7 +76,8 @@ class RuntimeEngine(private val context: Context) {
             group.any { relativePath ->
                 val file = File(directory, relativePath)
                 file.isFile && file.length() > 0L &&
-                    (relativePath !in definition.executablePaths || file.canExecute())
+                    (relativePath !in definition.executablePaths ||
+                        (file.canExecute() && ElfAbiValidator.isCompatible(file, definition.requiredAbi)))
             }
         }
 
