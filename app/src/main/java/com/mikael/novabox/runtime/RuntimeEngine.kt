@@ -1,6 +1,8 @@
 package com.mikael.novabox.runtime
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import com.mikael.novabox.model.ContainerConfig
 import com.mikael.novabox.model.EngineType
 import com.mikael.novabox.model.RuntimeId
@@ -14,6 +16,19 @@ sealed interface EngineAvailability {
 }
 
 class RuntimeEngine(private val context: Context) {
+    private val supportedAbis = Build.SUPPORTED_ABIS.toSet()
+    private val hardwareDescription = listOf(
+        Build.HARDWARE,
+        Build.BOARD,
+        Build.MODEL,
+        Build.MANUFACTURER,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else ""
+    ).joinToString(" ").lowercase()
+    private val hasVulkan = context.packageManager.hasSystemFeature(
+        PackageManager.FEATURE_VULKAN_HARDWARE_VERSION
+    )
+    private val hasAdreno = listOf("adreno", "qualcomm", "qcom").any(hardwareDescription::contains)
+
     fun inspect(config: ContainerConfig): EngineAvailability {
         val profile = config.profile
             ?: return EngineAvailability.Unsupported("Perfil de sistema desconhecido.")
@@ -27,39 +42,87 @@ class RuntimeEngine(private val context: Context) {
             return EngineAvailability.Unsupported("Não existe uma cadeia de execução configurada para este perfil.")
         }
 
-        val missing = required.filterNot(::isComponentInstalled)
+        val statuses = required.map(::componentStatus)
+        val unsupported = statuses.firstOrNull {
+            it.state == RuntimeComponentState.UNSUPPORTED_DEVICE
+        }
+        if (unsupported != null) {
+            return EngineAvailability.Unsupported(unsupported.message)
+        }
+        val missing = statuses.filter { it.state != RuntimeComponentState.INSTALLED }.map { it.id }
         if (missing.isNotEmpty()) return EngineAvailability.Missing(missing)
 
-        return EngineAvailability.Ready(required.map { executableFor(it).absolutePath })
+        val executablePaths = required.flatMap { id ->
+            RuntimeComponentRegistry.get(id).executablePaths
+                .map { File(runtimeDirectory(id), it) }
+                .filter { it.isFile }
+                .map { it.absolutePath }
+        }
+        return EngineAvailability.Ready(executablePaths)
     }
 
-    fun isComponentInstalled(id: RuntimeId): Boolean {
-        val target = executableFor(id)
-        val isLibraryMarker = id in setOf(
-            RuntimeId.MESA,
-            RuntimeId.VIRGL,
-            RuntimeId.ZINK,
-            RuntimeId.TURNIP,
-            RuntimeId.DXVK,
-            RuntimeId.VKD3D
-        )
-        return if (isLibraryMarker) target.isFile else target.isFile && target.canExecute()
+    fun componentStatus(id: RuntimeId): RuntimeComponentStatus {
+        val definition = RuntimeComponentRegistry.get(id)
+        val incompatibility = deviceIncompatibility(definition)
+        if (incompatibility != null) {
+            return RuntimeComponentStatus(
+                id, RuntimeComponentState.UNSUPPORTED_DEVICE, incompatibility, definition.dependencies
+            )
+        }
+
+        val directory = runtimeDirectory(id)
+        val groups = definition.requiredFileGroups
+        val groupResults = groups.map { group ->
+            group.any { relativePath ->
+                val file = File(directory, relativePath)
+                file.isFile && file.length() > 0L &&
+                    (relativePath !in definition.executablePaths || file.canExecute())
+            }
+        }
+
+        val filesState = when {
+            groupResults.all { it } -> RuntimeComponentState.INSTALLED
+            groupResults.any { it } -> RuntimeComponentState.INCOMPLETE
+            else -> RuntimeComponentState.NOT_INSTALLED
+        }
+        val missingDependencies = if (filesState == RuntimeComponentState.INSTALLED) {
+            definition.dependencies.filterNot(::isComponentInstalled)
+        } else {
+            emptyList()
+        }
+        val state = if (missingDependencies.isNotEmpty()) {
+            RuntimeComponentState.BLOCKED
+        } else {
+            filesState
+        }
+        val message = when (state) {
+            RuntimeComponentState.INSTALLED -> "Arquivos principais e dependências encontrados."
+            RuntimeComponentState.INCOMPLETE -> "Instalação incompleta: faltam arquivos obrigatórios."
+            RuntimeComponentState.NOT_INSTALLED -> "Componente não instalado neste ambiente."
+            RuntimeComponentState.UNSUPPORTED_DEVICE -> incompatibility.orEmpty()
+            RuntimeComponentState.BLOCKED -> "Dependências ausentes: " + missingDependencies.joinToString { it.title }
+        }
+        return RuntimeComponentStatus(id, state, message, definition.dependencies)
     }
+
+    fun isComponentInstalled(id: RuntimeId): Boolean =
+        componentStatus(id).state == RuntimeComponentState.INSTALLED
 
     fun runtimeDirectory(id: RuntimeId): File =
         File(context.filesDir, "runtimes/${id.name.lowercase()}")
 
-    private fun executableFor(id: RuntimeId): File {
-        val executableName = when (id) {
-            RuntimeId.WINE -> "bin/wine"
-            RuntimeId.BOX64 -> "bin/box64"
-            RuntimeId.BOX86 -> "bin/box86"
-            RuntimeId.PROOT -> "bin/proot"
-            RuntimeId.DOSBOX -> "bin/dosbox"
-            RuntimeId.QEMU -> "bin/qemu-system"
-            RuntimeId.MESA, RuntimeId.VIRGL, RuntimeId.ZINK, RuntimeId.TURNIP,
-            RuntimeId.DXVK, RuntimeId.VKD3D -> "lib/installed.marker"
+    private fun deviceIncompatibility(definition: RuntimeComponentDefinition): String? {
+        if (definition.requiredAbi.isNotEmpty() &&
+            supportedAbis.none { it in definition.requiredAbi }
+        ) {
+            return "Este pacote exige ABI ${definition.requiredAbi.joinToString()}."
         }
-        return File(runtimeDirectory(id), executableName)
+        if (definition.requiresAdreno && !hasAdreno) {
+            return "Turnip exige GPU Qualcomm Adreno. Esta GPU não foi identificada como Adreno."
+        }
+        if (definition.requiresVulkan && !hasVulkan) {
+            return "Este componente exige suporte Vulkan anunciado pelo Android."
+        }
+        return null
     }
 }

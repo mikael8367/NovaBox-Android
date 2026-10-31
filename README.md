@@ -38,9 +38,11 @@ Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. 
 
 ## Motores e limitações atuais
 
-O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton.
+O catálogo reconhece e gerencia Wine (compatibilidade Windows), Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton.
 
-A integração dos binários nativos ainda não está concluída. O app verifica a presença dos executáveis e mostra os componentes ausentes; ele não declara um runtime instalado sem encontrá-lo.
+O gerenciador agora possui um registro técnico por componente, com arquivos esperados, dependências, ABI mínima e requisitos gráficos. A tela Motores valida arquivos reais no diretório privado do app, tamanho não zero e permissão de execução para binários. Os estados distinguem instalado, ausente, incompleto e incompatível com o aparelho. Marcadores vazios não são aceitos como instalação. A verificação de Turnip exige indícios de GPU Qualcomm Adreno e Vulkan; DXVK, VKD3D-Proton e Zink verificam o suporte Vulkan anunciado pelo Android.
+
+**Limitação atual:** os pacotes nativos e seus instaladores ainda não estão publicados/integrados. Portanto, esta etapa entrega o gerenciador e a validação real dos componentes, mas não baixa nem instala os motores e ainda não executa Windows/Linux/DOS ou máquinas QEMU. Não considere a prévia visual como um sistema iniciado. Os pacotes seguintes precisam vir de fontes upstream confiáveis, com ABI correta, hashes e licenças verificadas.
 
 - Wine + Box64/Box86: caminho planejado para aplicativos Windows.
 - PRoot: caminho planejado para ambientes Linux de usuário.
