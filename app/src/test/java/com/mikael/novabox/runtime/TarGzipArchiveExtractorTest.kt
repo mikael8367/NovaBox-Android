@@ -6,6 +6,7 @@ import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.util.zip.GZIPOutputStream
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
