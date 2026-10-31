@@ -44,6 +44,8 @@ import com.mikael.novabox.model.AudioMode
 import com.mikael.novabox.model.Box64Preset
 import com.mikael.novabox.model.ContainerConfig
 import com.mikael.novabox.model.CpuArchitecture
+import com.mikael.novabox.model.DisplayOrientation
+import com.mikael.novabox.model.PerformanceProfile
 import com.mikael.novabox.model.EngineType
 import com.mikael.novabox.model.GraphicsProfile
 import com.mikael.novabox.model.MouseMode
@@ -94,6 +96,28 @@ fun CreateEnvironmentDialog(
     var locale by rememberSaveable(key) { mutableStateOf(initialConfig?.locale ?: "pt_BR") }
     var environmentVariables by rememberSaveable(key) { mutableStateOf(initialConfig?.environmentVariables.orEmpty()) }
     var sharedFolderPath by rememberSaveable(key) { mutableStateOf(initialConfig?.sharedFolderPath.orEmpty()) }
+    var performanceProfile by rememberSaveable(key) { mutableStateOf(initialConfig?.performanceProfile ?: PerformanceProfile.BALANCED) }
+    var orientation by rememberSaveable(key) { mutableStateOf(initialConfig?.orientation ?: DisplayOrientation.AUTO) }
+    var clipboardSyncEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.clipboardSyncEnabled ?: true) }
+    var fileSharingEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.fileSharingEnabled ?: false) }
+    var keepScreenOn by rememberSaveable(key) { mutableStateOf(initialConfig?.keepScreenOn ?: false) }
+    var showFpsOverlay by rememberSaveable(key) { mutableStateOf(initialConfig?.showFpsOverlay ?: false) }
+    var touchKeyboardEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.touchKeyboardEnabled ?: true) }
+    var gameModeEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.gameModeEnabled ?: false) }
+    var gpuAccelerationEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.gpuAccelerationEnabled ?: true) }
+    var highDpiEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.highDpiEnabled ?: true) }
+    var mouseCaptureEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.mouseCaptureEnabled ?: true) }
+    var registryOptimizationsEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.registryOptimizationsEnabled ?: false) }
+    var servicesOptimizationsEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.servicesOptimizationsEnabled ?: false) }
+    var androidAnimationsEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidAnimationsEnabled ?: false) }
+    var androidMultiWindowEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidMultiWindowEnabled ?: true) }
+    var androidPlayServicesEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidPlayServicesEnabled ?: false) }
+    var androidNotificationsEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidNotificationsEnabled ?: true) }
+    var androidBackgroundAppsEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidBackgroundAppsEnabled ?: true) }
+    var androidUsbDebuggingEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidUsbDebuggingEnabled ?: false) }
+    var androidBootAnimationEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.androidBootAnimationEnabled ?: true) }
+    var startupArguments by rememberSaveable(key) { mutableStateOf(initialConfig?.startupArguments.orEmpty()) }
+    var dllOverrides by rememberSaveable(key) { mutableStateOf(initialConfig?.dllOverrides.orEmpty()) }
     var advanced by rememberSaveable(key) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -345,6 +369,18 @@ fun CreateEnvironmentDialog(
             }
 
             if (advanced) {
+                FormLabel("Perfil de desempenho")
+                ChoiceGrid(PerformanceProfile.entries.map { it.label to it }, performanceProfile, onSelect = { performanceProfile = it })
+                FormLabel("Orientação da tela")
+                ChoiceGrid(DisplayOrientation.entries.map { it.label to it }, orientation, onSelect = { orientation = it })
+                SwitchSetting("Manter a tela ligada", keepScreenOn) { keepScreenOn = it }
+                SwitchSetting("Mostrar contador de FPS (quando suportado)", showFpsOverlay) { showFpsOverlay = it }
+                SwitchSetting("Sincronizar área de transferência (quando suportado)", clipboardSyncEnabled) { clipboardSyncEnabled = it }
+                SwitchSetting("Compartilhar arquivos com o Android host (quando suportado)", fileSharingEnabled) { fileSharingEnabled = it }
+                SwitchSetting("Teclado virtual/toque", touchKeyboardEnabled) { touchKeyboardEnabled = it }
+                SwitchSetting("Aceleração gráfica (quando disponível)", gpuAccelerationEnabled) { gpuAccelerationEnabled = it }
+                SwitchSetting("Captura do mouse", mouseCaptureEnabled) { mouseCaptureEnabled = it }
+
                 FormLabel("Áudio")
                 ChoiceGrid(AudioMode.entries.map { it.label to it }, audio, onSelect = { audio = it })
 
@@ -391,6 +427,61 @@ fun CreateEnvironmentDialog(
                     SwitchSetting("ESync", esyncEnabled) { esyncEnabled = it }
                     SwitchSetting("FSync", fsyncEnabled) { fsyncEnabled = it }
                     SwitchSetting("WoW64", wow64Enabled) { wow64Enabled = it }
+                    FormLabel("Otimizações do Windows")
+                    SwitchSetting("Modo de jogo", gameModeEnabled) { gameModeEnabled = it }
+                    SwitchSetting("Ajustes de registro (perfil)", registryOptimizationsEnabled) { registryOptimizationsEnabled = it }
+                    SwitchSetting("Otimização de serviços (perfil)", servicesOptimizationsEnabled) { servicesOptimizationsEnabled = it }
+                    SwitchSetting("Escala de DPI alta", highDpiEnabled) { highDpiEnabled = it }
+                    SwitchSetting("Captura automática do mouse", mouseCaptureEnabled) { mouseCaptureEnabled = it }
+                    FormLabel("Argumentos de inicialização")
+                    OutlinedTextField(
+                        value = startupArguments,
+                        onValueChange = { startupArguments = it.take(1024) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("-windowed -novid", color = NovaMuted, fontSize = 10.sp) },
+                        minLines = 1,
+                        maxLines = 3,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = NovaPanelRaised,
+                            unfocusedContainerColor = NovaPanelRaised,
+                            focusedTextColor = NovaText,
+                            unfocusedTextColor = NovaText,
+                            focusedIndicatorColor = NovaGreen,
+                            unfocusedIndicatorColor = NovaBorder,
+                            cursorColor = NovaGreen
+                        )
+                    )
+                    FormLabel("Substituições de DLL (Wine)")
+                    OutlinedTextField(
+                        value = dllOverrides,
+                        onValueChange = { dllOverrides = it.take(1024) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Ex.: d3d11=n,b; dxgi=n", color = NovaMuted, fontSize = 10.sp) },
+                        minLines = 1,
+                        maxLines = 3,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = NovaPanelRaised,
+                            unfocusedContainerColor = NovaPanelRaised,
+                            focusedTextColor = NovaText,
+                            unfocusedTextColor = NovaText,
+                            focusedIndicatorColor = NovaGreen,
+                            unfocusedIndicatorColor = NovaBorder,
+                            cursorColor = NovaGreen
+                        )
+                    )
+                }
+
+                if (family == OsFamily.ANDROID) {
+                    FormLabel("Personalização do Android convidado")
+                    SwitchSetting("Animações do sistema", androidAnimationsEnabled) { androidAnimationsEnabled = it }
+                    SwitchSetting("Janelas múltiplas", androidMultiWindowEnabled) { androidMultiWindowEnabled = it }
+                    SwitchSetting("Google Play Services (se a imagem incluir)", androidPlayServicesEnabled) { androidPlayServicesEnabled = it }
+                    SwitchSetting("Notificações", androidNotificationsEnabled) { androidNotificationsEnabled = it }
+                    SwitchSetting("Permitir apps em segundo plano", androidBackgroundAppsEnabled) { androidBackgroundAppsEnabled = it }
+                    SwitchSetting("Depuração USB/ADB no convidado", androidUsbDebuggingEnabled) { androidUsbDebuggingEnabled = it }
+                    SwitchSetting("Animação de inicialização", androidBootAnimationEnabled) { androidBootAnimationEnabled = it }
                 }
 
                 FormLabel("Variáveis de ambiente (opcional)")
@@ -468,7 +559,29 @@ fun CreateEnvironmentDialog(
                         fpsLimit = fpsLimit,
                         locale = locale,
                         environmentVariables = environmentVariables,
-                        sharedFolderPath = sharedFolderPath
+                        sharedFolderPath = sharedFolderPath,
+                        performanceProfile = performanceProfile,
+                        orientation = orientation,
+                        clipboardSyncEnabled = clipboardSyncEnabled,
+                        fileSharingEnabled = fileSharingEnabled,
+                        keepScreenOn = keepScreenOn,
+                        showFpsOverlay = showFpsOverlay,
+                        touchKeyboardEnabled = touchKeyboardEnabled,
+                        gameModeEnabled = gameModeEnabled,
+                        gpuAccelerationEnabled = gpuAccelerationEnabled,
+                        highDpiEnabled = highDpiEnabled,
+                        mouseCaptureEnabled = mouseCaptureEnabled,
+                        registryOptimizationsEnabled = registryOptimizationsEnabled,
+                        servicesOptimizationsEnabled = servicesOptimizationsEnabled,
+                        androidAnimationsEnabled = androidAnimationsEnabled,
+                        androidMultiWindowEnabled = androidMultiWindowEnabled,
+                        androidPlayServicesEnabled = androidPlayServicesEnabled,
+                        androidNotificationsEnabled = androidNotificationsEnabled,
+                        androidBackgroundAppsEnabled = androidBackgroundAppsEnabled,
+                        androidUsbDebuggingEnabled = androidUsbDebuggingEnabled,
+                        androidBootAnimationEnabled = androidBootAnimationEnabled,
+                        startupArguments = startupArguments,
+                        dllOverrides = dllOverrides
                     )
                     error = config.validate()
                     if (error == null) onSave(config)
