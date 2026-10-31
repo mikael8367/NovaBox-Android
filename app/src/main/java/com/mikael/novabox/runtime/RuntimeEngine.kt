@@ -2,7 +2,7 @@ package com.mikael.novabox.runtime
 
 import android.content.Context
 import com.mikael.novabox.model.ContainerConfig
-import com.mikael.novabox.model.OsFamily
+import com.mikael.novabox.model.EngineType
 import com.mikael.novabox.model.RuntimeId
 import com.mikael.novabox.model.RuntimePlanner
 import java.io.File
@@ -18,10 +18,8 @@ class RuntimeEngine(private val context: Context) {
         val profile = config.profile
             ?: return EngineAvailability.Unsupported("Perfil de sistema desconhecido.")
 
-        if (profile.family == OsFamily.OTHER && profile.id != "freedos") {
-            return EngineAvailability.Unsupported(
-                "Este perfil exige virtualização própria e ainda não possui motor no NovaBox."
-            )
+        if (profile.engine == EngineType.UNSUPPORTED) {
+            return EngineAvailability.Unsupported("Este perfil não possui um motor compatível configurado.")
         }
 
         val required = RuntimePlanner.requiredFor(config)
@@ -47,6 +45,7 @@ class RuntimeEngine(private val context: Context) {
             RuntimeId.BOX86 -> "bin/box86"
             RuntimeId.PROOT -> "bin/proot"
             RuntimeId.DOSBOX -> "bin/dosbox"
+            RuntimeId.QEMU -> "bin/qemu-system"
             RuntimeId.MESA, RuntimeId.VIRGL, RuntimeId.ZINK, RuntimeId.TURNIP,
             RuntimeId.DXVK, RuntimeId.VKD3D -> "lib/installed.marker"
         }
