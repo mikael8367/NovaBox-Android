@@ -37,6 +37,10 @@ object OsCatalog {
         OsProfile("windows-vista", "Windows Vista", OsFamily.WINDOWS, "Vista", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
         OsProfile("windows-xp", "Windows XP", OsFamily.WINDOWS, "XP", "Perfil legado para programas antigos.", EngineType.WINE_COMPATIBILITY, "Experimental"),
         OsProfile("windows-2000", "Windows 2000", OsFamily.WINDOWS, "2000", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
+        OsProfile("windows-nt4", "Windows NT 4.0", OsFamily.WINDOWS, "NT 4.0", "Perfil legado para programas antigos.", EngineType.WINE_COMPATIBILITY, "Experimental"),
+        OsProfile("windows-me", "Windows ME", OsFamily.WINDOWS, "ME", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
+        OsProfile("windows-98", "Windows 98", OsFamily.WINDOWS, "98", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
+        OsProfile("windows-95", "Windows 95", OsFamily.WINDOWS, "95", "Perfil legado.", EngineType.WINE_COMPATIBILITY, "Experimental"),
 
         OsProfile("ubuntu-24", "Ubuntu 24.04 LTS", OsFamily.LINUX, "24.04 LTS", "Distribuição Linux baseada em Debian.", EngineType.LINUX_USERLAND, "Perfil"),
         OsProfile("ubuntu-22", "Ubuntu 22.04 LTS", OsFamily.LINUX, "22.04 LTS", "Distribuição Linux de suporte prolongado.", EngineType.LINUX_USERLAND, "Perfil"),
@@ -50,16 +54,25 @@ object OsCatalog {
         OsProfile("opensuse", "openSUSE Tumbleweed", OsFamily.LINUX, "Rolling", "Distribuição rolling release.", EngineType.LINUX_USERLAND, "Perfil"),
         OsProfile("kali", "Kali Linux", OsFamily.LINUX, "Rolling", "Distribuição Linux especializada.", EngineType.LINUX_USERLAND, "Perfil"),
         OsProfile("raspios", "Raspberry Pi OS", OsFamily.LINUX, "Bookworm", "Distribuição Linux baseada em Debian.", EngineType.LINUX_USERLAND, "Perfil"),
+        OsProfile("gentoo", "Gentoo Linux", OsFamily.LINUX, "Rolling", "Distribuição Linux baseada em pacotes compilados.", EngineType.LINUX_USERLAND, "Perfil"),
+        OsProfile("void", "Void Linux", OsFamily.LINUX, "Rolling", "Distribuição Linux independente.", EngineType.LINUX_USERLAND, "Perfil"),
+        OsProfile("nixos", "NixOS", OsFamily.LINUX, "24.x", "Distribuição Linux com configuração declarativa.", EngineType.LINUX_USERLAND, "Perfil"),
+        OsProfile("popos", "Pop!_OS", OsFamily.LINUX, "24.04", "Distribuição baseada em Ubuntu.", EngineType.LINUX_USERLAND, "Perfil"),
+        OsProfile("elementary", "elementary OS", OsFamily.LINUX, "8.x", "Distribuição desktop baseada em Ubuntu.", EngineType.LINUX_USERLAND, "Perfil"),
+        OsProfile("zorin", "Zorin OS", OsFamily.LINUX, "17.x", "Distribuição desktop baseada em Ubuntu.", EngineType.LINUX_USERLAND, "Perfil"),
 
         OsProfile("freebsd", "FreeBSD", OsFamily.BSD, "14.x", "Sistema BSD; precisa de virtualização de sistema completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("openbsd", "OpenBSD", OsFamily.BSD, "7.x", "Sistema BSD; precisa de virtualização de sistema completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("netbsd", "NetBSD", OsFamily.BSD, "10.x", "Sistema BSD; precisa de virtualização de sistema completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
+        OsProfile("dragonflybsd", "DragonFly BSD", OsFamily.BSD, "6.x", "Sistema BSD; precisa de virtualização de sistema completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
 
         OsProfile("freedos", "FreeDOS", OsFamily.OTHER, "1.x", "Sistema compatível com DOS; requer emulador DOS.", EngineType.DOS_EMULATION, "Planejado"),
         OsProfile("reactos", "ReactOS", OsFamily.OTHER, "0.4.x", "Sistema experimental; exige virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("haiku", "Haiku", OsFamily.OTHER, "R1", "Sistema inspirado no BeOS; exige virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
         OsProfile("android-x86", "Android-x86", OsFamily.OTHER, "9.x", "Imagem de outro sistema Android; exige virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
-        OsProfile("solaris", "Solaris / illumos", OsFamily.OTHER, "Compatível", "Sistemas Unix; exigem virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado")
+        OsProfile("solaris", "Solaris / illumos", OsFamily.OTHER, "Compatível", "Sistemas Unix; exigem virtualização completa.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
+        OsProfile("os2", "OS/2 Warp", OsFamily.OTHER, "4.x", "Sistema legado que exige virtualização ou emulação específica.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado"),
+        OsProfile("beos", "BeOS", OsFamily.OTHER, "5.x", "Sistema legado que exige virtualização ou emulação específica.", EngineType.FULL_SYSTEM_VIRTUALIZATION, "Não integrado")
     )
 
     fun byFamily(family: OsFamily): List<OsProfile> = profiles.filter { it.family == family }
