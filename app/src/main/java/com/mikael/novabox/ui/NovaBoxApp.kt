@@ -538,6 +538,14 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
                         }
                         Text(runtime.detail, color = NovaMuted, fontSize = 10.sp, lineHeight = 14.sp)
                         Text(status.message, color = tint, fontSize = 10.sp, lineHeight = 14.sp)
+                        if (com.mikael.novabox.runtime.RuntimePackageCatalog.packageFor(runtime) == null) {
+                            Text(
+                                com.mikael.novabox.runtime.RuntimePackageCatalog.unavailableReason(runtime),
+                                color = NovaMuted,
+                                fontSize = 9.sp,
+                                lineHeight = 13.sp
+                            )
+                        }
                         if (status.dependencies.isNotEmpty()) {
                             Text(
                                 "Relacionados: " + status.dependencies.joinToString { it.title },
