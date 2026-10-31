@@ -55,6 +55,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -98,8 +99,11 @@ fun NovaBoxApp() {
     val runtimeEngine = remember { RuntimeEngine(context) }
     val wineWorkspaceManager = remember { WineWorkspaceManager(context) }
     val programRepository = remember { ProgramRepository(context) }
-    val programs = remember {
-        mutableStateListOf<ProgramEntry>().apply { addAll(programRepository.load()) }
+    val programs = remember { mutableStateListOf<ProgramEntry>() }
+    LaunchedEffect(programRepository) {
+        val loadedPrograms = withContext(Dispatchers.IO) { programRepository.load() }
+        programs.clear()
+        programs.addAll(loadedPrograms)
     }
     val scope = rememberCoroutineScope()
     var pendingProgramContainer by remember { mutableStateOf<ContainerConfig?>(null) }
