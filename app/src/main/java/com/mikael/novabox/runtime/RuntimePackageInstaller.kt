@@ -69,6 +69,7 @@ class RuntimePackageInstaller(private val context: Context) {
                     rootDirectory = spec.archiveRootDirectory,
                     outputDirectory = spec.outputDirectory,
                     allowedFiles = spec.allowedArchiveFiles,
+                    requiredFiles = spec.requiredArchiveFiles,
                     maxExpandedBytes = spec.maxExpandedBytes
                 )
             }
@@ -194,6 +195,9 @@ class RuntimePackageInstaller(private val context: Context) {
         require(spec.fileName.endsWith(".tar.gz")) { "Formato de arquivo não suportado." }
         require(spec.archiveFormat == RuntimeArchiveFormat.TAR_GZ) { "Formato de arquivo não suportado." }
         require(spec.allowedArchiveFiles.isNotEmpty()) { "O pacote não possui arquivos esperados." }
+        require(spec.requiredArchiveFiles.isNotEmpty() &&
+            spec.requiredArchiveFiles.all { it in spec.allowedArchiveFiles }
+        ) { "A lista de arquivos obrigatórios do pacote é inválida." }
     }
 
     private fun validateInstalledFiles(
