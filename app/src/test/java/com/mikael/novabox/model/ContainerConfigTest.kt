@@ -108,6 +108,44 @@ class ContainerConfigTest {
         assertEquals(listOf(RuntimeId.DOSBOX), RuntimePlanner.requiredFor(config))
     }
 
+
+    @Test
+    fun expandedWindowsAndAndroidSettingsHaveSafeDefaultsAndCanBeCustomized() {
+        val windows = ContainerConfig(name = "Windows avançado", osProfileId = "windows-10")
+        val android = ContainerConfig(name = "Android avançado", osProfileId = "android-14")
+
+        assertEquals(PerformanceProfile.BALANCED, windows.performanceProfile)
+        assertEquals(DisplayOrientation.AUTO, android.orientation)
+        assertTrue(windows.gpuAccelerationEnabled)
+        assertTrue(android.androidNotificationsEnabled)
+
+        val customizedWindows = windows.copy(
+            performanceProfile = PerformanceProfile.PERFORMANCE,
+            gameModeEnabled = true,
+            registryOptimizationsEnabled = true,
+            startupArguments = "-windowed"
+        )
+        val customizedAndroid = android.copy(
+            androidAnimationsEnabled = true,
+            androidMultiWindowEnabled = false,
+            androidUsbDebuggingEnabled = true,
+            orientation = DisplayOrientation.LANDSCAPE
+        )
+
+        assertEquals(null, customizedWindows.validate())
+        assertEquals(null, customizedAndroid.validate())
+        assertTrue(customizedWindows.gameModeEnabled)
+        assertTrue(customizedAndroid.androidUsbDebuggingEnabled)
+    }
+
+    @Test
+    fun startupArgumentsAndDllOverridesRespectStorageLimits() {
+        val valid = ContainerConfig(name = "Windows", osProfileId = "windows-10")
+        assertEquals(null, valid.copy(startupArguments = "-windowed", dllOverrides = "d3d11=n,b").validate())
+        assertNotNull(valid.copy(startupArguments = "x".repeat(1025)).validate())
+        assertNotNull(valid.copy(dllOverrides = "x".repeat(1025)).validate())
+    }
+
     @Test
     fun configurationValidationRejectsInvalidValues() {
         val valid = ContainerConfig(name = "Windows 10", osProfileId = "windows-10")
