@@ -152,6 +152,7 @@ fun CreateEnvironmentDialog(
                 Text("Fechar", color = NovaMuted, fontSize = 10.sp, modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onDismiss).padding(8.dp))
             }
 
+            FormSectionHeader("Identificação", "Dê um nome e escolha o sistema que deseja configurar.")
             FormLabel("Nome do ambiente")
             OutlinedTextField(
                 value = name,
@@ -171,6 +172,7 @@ fun CreateEnvironmentDialog(
                 )
             )
 
+            FormSectionHeader("Sistema operacional", "Selecione a família e a versão do ambiente.")
             FormLabel("Família do sistema")
             ChoiceGrid(
                 options = OsFamily.entries.map { it.label to it },
@@ -266,6 +268,7 @@ fun CreateEnvironmentDialog(
                 warning = selectedProfile.engine == EngineType.FULL_SYSTEM_VIRTUALIZATION || selectedProfile.engine == EngineType.UNSUPPORTED
             )
 
+            FormSectionHeader("Conectividade", "Rede e acesso à Internet do ambiente.")
             if (family == OsFamily.WINDOWS || family == OsFamily.ANDROID) {
                 FormLabel("Conexão com a Internet")
                 ChoiceGrid(
@@ -286,6 +289,7 @@ fun CreateEnvironmentDialog(
                 )
             }
 
+            FormSectionHeader("Recursos do sistema", "Defina arquitetura, memória, processador e armazenamento.")
             FormLabel(if (family == OsFamily.ANDROID) "Arquitetura do Android convidado" else "Arquitetura do programa")
             ChoiceGrid(
                 options = CpuArchitecture.entries.map { it.label to it },
@@ -331,6 +335,7 @@ fun CreateEnvironmentDialog(
                 onSelect = { dpi = it }
             )
 
+            FormSectionHeader("Gráficos e desempenho", "Ajuste renderização, FPS e memória gráfica.")
             FormLabel("Limite de FPS: $fpsLimit")
             ChoiceGrid(
                 options = ContainerConfig.supportedFpsLimits.map { "$it FPS" to it },
@@ -369,6 +374,7 @@ fun CreateEnvironmentDialog(
             }
 
             if (advanced) {
+                FormSectionHeader("Desempenho e tela", "Controles gerais de experiência e apresentação.")
                 FormLabel("Perfil de desempenho")
                 ChoiceGrid(PerformanceProfile.entries.map { it.label to it }, performanceProfile, onSelect = { performanceProfile = it })
                 FormLabel("Orientação da tela")
@@ -381,6 +387,7 @@ fun CreateEnvironmentDialog(
                 SwitchSetting("Aceleração gráfica (quando disponível)", gpuAccelerationEnabled) { gpuAccelerationEnabled = it }
                 SwitchSetting("Captura do mouse", mouseCaptureEnabled) { mouseCaptureEnabled = it }
 
+                FormSectionHeader("Entrada e integração", "Áudio, mouse, idioma e compartilhamento.")
                 FormLabel("Áudio")
                 ChoiceGrid(AudioMode.entries.map { it.label to it }, audio, onSelect = { audio = it })
 
@@ -409,6 +416,7 @@ fun CreateEnvironmentDialog(
                 )
 
                 if (selectedProfile.engine == EngineType.WINE_COMPATIBILITY) {
+                    FormSectionHeader("Windows e Wine", "Compatibilidade, renderização e ajustes do ambiente Windows.")
                     FormLabel("Versão do Wine desejada")
                     ChoiceGrid(WinePreset.entries.map { it.label to it }, winePreset, onSelect = { winePreset = it })
                 }
@@ -473,6 +481,7 @@ fun CreateEnvironmentDialog(
                 }
 
                 if (family == OsFamily.ANDROID) {
+                    FormSectionHeader("Android convidado", "Recursos e comportamento do sistema Android.")
                     FormLabel("Personalização do Android convidado")
                     SwitchSetting("Animações do sistema", androidAnimationsEnabled) { androidAnimationsEnabled = it }
                     SwitchSetting("Janelas múltiplas", androidMultiWindowEnabled) { androidMultiWindowEnabled = it }
@@ -483,6 +492,7 @@ fun CreateEnvironmentDialog(
                     SwitchSetting("Animação de inicialização", androidBootAnimationEnabled) { androidBootAnimationEnabled = it }
                 }
 
+                FormSectionHeader("Avançado", "Parâmetros extras e caminhos personalizados.")
                 FormLabel("Variáveis de ambiente (opcional)")
                 OutlinedTextField(
                     value = environmentVariables,
@@ -588,6 +598,21 @@ fun CreateEnvironmentDialog(
             )
             Text("Perfis não baixam imagens do sistema e não instalam motores automaticamente.", color = NovaMuted, fontSize = 9.sp, lineHeight = 13.sp)
         }
+    }
+}
+
+
+@Composable
+private fun FormSectionHeader(title: String, subtitle: String) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(13.dp))
+            .background(Color(0xFF17251B))
+            .border(1.dp, NovaBorder, RoundedCornerShape(13.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(title.uppercase(), color = NovaGreen, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+        Text(subtitle, color = NovaMuted, fontSize = 10.sp, lineHeight = 14.sp)
     }
 }
 
