@@ -6,7 +6,7 @@ enum class RuntimeId(val title: String, val purpose: String, val detail: String)
     BOX86("Box86", "Tradução x86", "Executa programas Linux x86 de 32 bits em hosts ARM compatíveis."),
     PROOT("PRoot", "Ambientes Linux", "Prepara ambientes Linux de usuário sem exigir root; não é uma máquina virtual completa."),
     DOSBOX("DOSBox", "Compatibilidade DOS", "Emulação separada para software e jogos DOS."),
-    QEMU("QEMU", "Virtualização de sistema", "Necessário para iniciar sistemas operacionais completos de outras famílias; ainda não integrado."),
+    QEMU("QEMU", "Virtualização de sistema e Android convidado", "Necessário para Android virtual, BSD e outros sistemas completos; aceleração depende do suporte do aparelho. Ainda não integrado."),
     MESA("Mesa", "Pilha gráfica", "Drivers e bibliotecas gráficas; suporte depende da GPU e do backend."),
     VIRGL("VirGL", "GPU virtual", "Renderização virtualizada para pilhas compatíveis."),
     ZINK("Zink", "OpenGL sobre Vulkan", "Camada OpenGL sobre Vulkan quando a pilha gráfica oferece suporte."),
@@ -44,6 +44,7 @@ object RuntimePlanner {
                 if (config.graphics == GraphicsProfile.TURNIP) add(RuntimeId.TURNIP)
             }
             EngineType.DOS_EMULATION -> listOf(RuntimeId.DOSBOX)
+            EngineType.ANDROID_VIRTUALIZATION -> listOf(RuntimeId.QEMU)
             EngineType.FULL_SYSTEM_VIRTUALIZATION -> listOf(RuntimeId.QEMU)
             EngineType.UNSUPPORTED -> emptyList()
         }
