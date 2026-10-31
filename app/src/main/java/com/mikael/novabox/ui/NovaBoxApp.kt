@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -201,9 +203,9 @@ private fun BottomNavigation(selected: MainTab, onSelect: (MainTab) -> Unit) {
             Column(
                 modifier = Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
                     .background(background).clickable { onSelect(tab) }
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 9.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
                     tab.icon,
@@ -214,8 +216,13 @@ private fun BottomNavigation(selected: MainTab, onSelect: (MainTab) -> Unit) {
                 Text(
                     tab.title,
                     color = if (isSelected) NovaGreen else NovaMuted,
-                    fontSize = 9.sp,
+                    fontSize = 10.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                )
+                Box(
+                    Modifier.padding(top = 1.dp).size(width = if (isSelected) 18.dp else 5.dp, height = 3.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) NovaGreen else Color.Transparent)
                 )
             }
         }
@@ -237,9 +244,12 @@ private fun HomeScreen(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("NOVABOX", color = NovaGreen, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-                Text("Seu computador.\nSeu espaço.", color = NovaText, fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold)
-                Text("Ambientes de sistemas no Android.", color = NovaMuted, fontSize = 12.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("NOVABOX", color = NovaGreen, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
+                    SmallTag("BETA")
+                }
+                Text("Seu espaço.\nDo seu jeito.", color = NovaText, fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Seus ambientes e sistemas em um só lugar.", color = NovaMuted, fontSize = 12.sp)
             }
             Box(
                 Modifier.size(68.dp).clip(RoundedCornerShape(22.dp))
@@ -251,13 +261,17 @@ private fun HomeScreen(
         }
 
         Surface(
-            color = NovaPanel,
+            color = Color(0xFF142219),
             shape = RoundedCornerShape(23.dp),
             modifier = Modifier.fillMaxWidth().border(1.dp, NovaBorder, RoundedCornerShape(23.dp))
         ) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("SEU PRÓXIMO AMBIENTE", color = NovaGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp)
-                Text("Windows, Linux e muito mais.", color = NovaText, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("COMECE POR AQUI", color = NovaGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp)
+                    Spacer(Modifier.weight(1f))
+                    Icon(Icons.Default.Add, contentDescription = null, tint = NovaGreen, modifier = Modifier.size(17.dp))
+                }
+                Text("Crie seu próximo ambiente.", color = NovaText, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 26.sp)
                 Text(
                     "Escolha uma família de sistema e personalize memória, CPU, tela, áudio, rede, gráficos e controles.",
                     color = NovaMuted, fontSize = 12.sp, lineHeight = 18.sp
@@ -439,7 +453,10 @@ private fun ContainerCard(
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 SmallTag(config.architecture.label)
                 SmallTag(config.resolution)
                 SmallTag("${config.ramMb} MB RAM")
