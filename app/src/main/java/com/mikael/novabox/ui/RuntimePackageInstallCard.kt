@@ -136,7 +136,7 @@ fun RuntimePackageInstallCard(
                                     }) {
                                         is RuntimeInstallResult.Installed -> {
                                             success = true
-                                            statusMessage = "DXVK ${result.version} instalado e verificado."
+                                            statusMessage = "Arquivos DXVK ${result.version} preparados e verificados. Ainda não foram ativados em um prefixo Wine."
                                             onInstallChanged()
                                         }
                                         is RuntimeInstallResult.Failed -> {
