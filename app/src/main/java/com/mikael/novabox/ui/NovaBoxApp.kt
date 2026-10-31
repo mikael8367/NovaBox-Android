@@ -184,9 +184,16 @@ fun NovaBoxApp() {
                                     showEditor = true
                                 },
                                 onOpenPreview = { activePreview = it },
-                                onDelete = {
-                                    containers.removeAll { item -> item.id == it.id }
-                                    repository.save(containers)
+                                onDelete = { config ->
+                                    val attachedPrograms = programs.filter { it.containerId == config.id }
+                                    scope.launch {
+                                        withContext(Dispatchers.IO) {
+                                            attachedPrograms.forEach(programRepository::delete)
+                                        }
+                                        programs.removeAll { it.containerId == config.id }
+                                        containers.removeAll { item -> item.id == config.id }
+                                        repository.save(containers)
+                                    }
                                 }
                             )
                             MainTab.RUNTIMES -> RuntimesScreen(runtimeEngine)
