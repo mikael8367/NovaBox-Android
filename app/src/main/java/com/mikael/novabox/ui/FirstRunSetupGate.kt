@@ -122,19 +122,19 @@ private fun FirstRunSetupScreen(
                 ) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            "Downloads ainda não disponíveis",
+                            "Instalação verificada parcialmente disponível",
                             color = Color(0xFFFFD27A),
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                         Text(
-                            "Os pacotes nativos ainda não têm fontes e hashes SHA-256 validados no projeto. Por segurança, o NovaBox não baixa arquivos desconhecidos nem mostra progresso ou tempo falso.",
+                            "Há um pacote DXVK 3.1.1 com tamanho e SHA-256 fixados. Os outros 11 motores ainda aguardam pacotes Android/ARM64 compatíveis e verificados. O NovaBox não baixa arquivos desconhecidos nem marca componentes como instalados antes da validação.",
                             color = Color(0xFFD0D8D1),
                             fontSize = 11.sp,
                             lineHeight = 16.sp
                         )
                         Text(
-                            "Tempo de download: indisponível até os pacotes serem publicados.",
+                            "DXVK exige Vulkan e Wine; a instalação não garante execução de jogos e o suporte Android não é oficial.",
                             color = Color(0xFFABB8AE),
                             fontSize = 10.sp
                         )
