@@ -36,6 +36,14 @@ As opções novas são salvas por ambiente e ambientes antigos recebem valores p
 
 Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. Windows/Wine está configurado para compartilhar a rede do Android hospedeiro quando o runtime estiver ativo. Android virtual usa o modo NAT como configuração desejada, mas precisa do encaminhamento de rede do QEMU para funcionar.
 
+## Workspaces Wine (preparação inicial)
+
+Na aba **Programas**, cada perfil Windows/Wine pode criar uma estrutura privada e isolada em `filesDir/wine-workspaces/<environment-id>`. O gerenciador valida o perfil e o identificador, impede saída do diretório raiz por path traversal, cria pastas separadas para prefix, home, temporários, logs e arquivos compartilhados e grava metadados versionados por substituição temporária.
+
+**Isso ainda não é um prefixo Wine inicializado.** O estado é registrado explicitamente como `WORKSPACE_ONLY` e `wineBootCompleted=false`. Não são criados registros falsos do Windows, não se afirma que `wineboot` foi executado e nenhum EXE é iniciado. A criação é repetível e a exclusão do ambiente também remove sua estrutura privada; se a limpeza falhar, o perfil é preservado.
+
+A próxima integração necessária é fornecer builds Android/ARM64 validados de Wine e Box64, definir corretamente a arquitetura host/guest e suas bibliotecas, executar `wineboot` dentro desse workspace e integrar um backend gráfico real (display, entrada, áudio e ciclo de vida do processo). Até esses componentes existirem e passarem por testes em aparelho, a execução gráfica permanece indisponível.
+
 ## Biblioteca de programas e diagnóstico
 
 A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Nenhuma permissão ampla de armazenamento é solicitada.
