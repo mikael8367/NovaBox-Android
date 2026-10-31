@@ -488,36 +488,51 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
         Modifier.fillMaxSize().background(NovaBackground).statusBarsPadding()
             .padding(horizontal = 17.dp, vertical = 15.dp)
     ) {
-        PageHeader("Compatibilidade", "Motores", "Componentes usados pelos diferentes sistemas.")
+        PageHeader("Compatibilidade", "Motores", "12 componentes • estado verificado no armazenamento do app.")
         Spacer(Modifier.height(12.dp))
         InfoNotice(
-            title = "Integração em desenvolvimento",
-            body = "O catálogo mostra o que cada sistema precisa. Os binários não estão incluídos ainda; por isso o app não marca componentes como instalados sem encontrá-los.",
+            title = "Gerenciador de componentes",
+            body = "O NovaBox agora verifica arquivos reais, permissões de execução e requisitos do aparelho. Um marcador vazio não conta como instalação. Os instaladores de pacotes nativos ainda precisam ser publicados e validados antes de liberar downloads.",
             warning = true
         )
         Spacer(Modifier.height(12.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             items(RuntimeId.entries.toList(), key = { it.name }) { runtime ->
-                val installed = runtimeEngine.isComponentInstalled(runtime)
-                Surface(color = NovaPanel, shape = RoundedCornerShape(15.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(13.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFF203326)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Memory, contentDescription = null, tint = NovaGreen, modifier = Modifier.size(18.dp))
+                val status = runtimeEngine.componentStatus(runtime)
+                val (label, tint) = when (status.state) {
+                    com.mikael.novabox.runtime.RuntimeComponentState.INSTALLED -> "Instalado" to NovaGreen
+                    com.mikael.novabox.runtime.RuntimeComponentState.NOT_INSTALLED -> "Não instalado" to NovaWarning
+                    com.mikael.novabox.runtime.RuntimeComponentState.INCOMPLETE -> "Incompleto" to NovaWarning
+                    com.mikael.novabox.runtime.RuntimeComponentState.UNSUPPORTED_DEVICE -> "Incompatível" to Color(0xFFFF7777)
+                }
+                Surface(
+                    color = NovaPanel,
+                    shape = RoundedCornerShape(15.dp),
+                    modifier = Modifier.fillMaxWidth().border(1.dp, NovaBorder, RoundedCornerShape(15.dp))
+                ) {
+                    Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFF203326)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Memory, contentDescription = null, tint = NovaGreen, modifier = Modifier.size(18.dp))
+                            }
+                            Column(Modifier.weight(1f).padding(start = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(runtime.title, color = NovaText, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(runtime.purpose, color = NovaGreen, fontSize = 10.sp)
+                            }
+                            Text(label, color = tint, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                         }
-                        Column(Modifier.weight(1f).padding(start = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(runtime.title, color = NovaText, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text(runtime.purpose, color = NovaGreen, fontSize = 10.sp)
-                            Text(runtime.detail, color = NovaMuted, fontSize = 9.sp, lineHeight = 13.sp)
+                        Text(runtime.detail, color = NovaMuted, fontSize = 10.sp, lineHeight = 14.sp)
+                        Text(status.message, color = tint, fontSize = 10.sp, lineHeight = 14.sp)
+                        if (status.dependencies.isNotEmpty()) {
+                            Text(
+                                "Relacionados: " + status.dependencies.joinToString { it.title },
+                                color = NovaMuted,
+                                fontSize = 9.sp
+                            )
                         }
-                        Text(
-                            if (installed) "OK" else "Pendente",
-                            color = if (installed) NovaGreen else NovaWarning,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
             }
