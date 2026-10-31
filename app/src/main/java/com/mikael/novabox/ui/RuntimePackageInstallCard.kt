@@ -53,7 +53,13 @@ fun RuntimePackageInstallCard(
 
     val componentStatus = runtimeEngine.componentStatus(RuntimeId.DXVK)
     val deviceUnsupported = componentStatus.state == RuntimeComponentState.UNSUPPORTED_DEVICE
-    val packageFilesPresent = runtimeEngine.componentFilesPresent(RuntimeId.DXVK)
+    val packageFilesPresent = spec?.requiredArchiveFiles?.all { relative ->
+        val file = java.io.File(
+            runtimeEngine.runtimeDirectory(RuntimeId.DXVK),
+            "${spec.outputDirectory}/$relative"
+        )
+        file.isFile && file.length() > 0L
+    } == true
 
     Surface(
         color = Color(0xFF142219),
