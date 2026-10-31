@@ -48,6 +48,8 @@ A inicialização do prefixo e a preparação do processo estão implementadas. 
 
 A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Cada item também oferece uma verificação manual de integridade: o NovaBox relê o conteúdo em fluxo, recalcula SHA-256 e compara com o hash registrado na importação. A leitura ocorre em segundo plano para não bloquear a interface. Nenhuma permissão ampla de armazenamento é solicitada.
 
+O cartão de cada ambiente Wine também oferece **Abrir log do Wine**. O visualizador lê apenas o final do arquivo, limitado a 32 KiB, valida o identificador e confirma que o caminho permanece dentro da pasta privada do ambiente. Enquanto a aba Programas está aberta, o estado dos processos é atualizado periodicamente para refletir encerramentos externos ou inesperados. Esses recursos melhoram o diagnóstico, mas não substituem o backend gráfico ainda ausente.
+
 O bundle Wine/Box64 e a camada de preparação do prefixo estão disponíveis. A aba Motores agora inclui um cartão de integração opcional com Termux:X11 para verificar e abrir o app externo. A biblioteca ainda não oferece execução gráfica funcional por botão: o XServer não é embutido nem iniciado automaticamente, e faltam o canal gráfico conectado ao Wine, integração real de entrada e áudio, clipboard e ciclo de vida completo da sessão. O cartão de diagnóstico nas configurações mostra modelo/Android, ABI, RAM, espaço livre, OpenGL ES e presença da feature Vulkan; o relatório pode ser copiado para suporte.
 
 ## Motores, instaladores e limitações atuais
