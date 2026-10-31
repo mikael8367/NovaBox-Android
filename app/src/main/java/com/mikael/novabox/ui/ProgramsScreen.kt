@@ -38,12 +38,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mikael.novabox.data.ProgramEntry
 import com.mikael.novabox.model.ContainerConfig
+import com.mikael.novabox.model.EngineType
+import com.mikael.novabox.runtime.WineWorkspaceStatus
+import com.mikael.novabox.runtime.WineWorkspaceState
 import java.util.Locale
 
 @Composable
 fun ProgramsScreen(
     containers: List<ContainerConfig>,
     programs: List<ProgramEntry>,
+    workspaceStatuses: Map<String, WineWorkspaceStatus>,
+    onPrepareWorkspace: (ContainerConfig) -> Unit,
     onImport: (ContainerConfig) -> Unit,
     onDelete: (ProgramEntry) -> Unit
 ) {
@@ -88,6 +93,29 @@ fun ProgramsScreen(
                                 Text(config.profile?.name ?: "Perfil desconhecido", color = NovaMuted, fontSize = 10.sp)
                             }
                             SmallTag("${entries.size} arquivo(s)")
+                        }
+                        if (config.profile?.engine == EngineType.WINE_COMPATIBILITY) {
+                            val workspace = workspaceStatuses[config.id]
+                            val prepared = workspace?.state == WineWorkspaceState.WORKSPACE_PREPARED
+                            InfoNotice(
+                                title = if (prepared) "Estrutura Wine preparada" else "Ambiente Wine",
+                                body = workspace?.message ?: "Prepare a estrutura privada deste ambiente. O Wine ainda precisará inicializar o prefixo quando o runtime estiver disponível.",
+                                warning = !prepared
+                            )
+                            Row(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp))
+                                    .background(NovaPanelRaised).clickable { onPrepareWorkspace(config) }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    if (prepared) "Verificar estrutura" else "Preparar estrutura Wine",
+                                    color = NovaGreen,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                         Row(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
