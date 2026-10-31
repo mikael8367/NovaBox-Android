@@ -34,6 +34,8 @@ import com.mikael.novabox.runtime.WinlatorRuntimeBundleInstaller
 import com.mikael.novabox.runtime.BundleInstallResult
 import com.mikael.novabox.runtime.RuntimeEngine
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -211,8 +213,12 @@ fun RuntimePackageInstallCard(
                         isInstalling = true
                         installJob = scope.launch {
                             try {
-                                when (val result = winlatorInstaller.install { current ->
-                                    progress = RuntimeDownloadProgress(current.downloadedBytes, current.totalBytes)
+                                when (val result = withContext(Dispatchers.IO) {
+                                    winlatorInstaller.install { current ->
+                                        withContext(Dispatchers.Main) {
+                                            progress = RuntimeDownloadProgress(current.downloadedBytes, current.totalBytes)
+                                        }
+                                    }
                                 }) {
                                     BundleInstallResult.Installed -> {
                                         winlatorInstalled = true
