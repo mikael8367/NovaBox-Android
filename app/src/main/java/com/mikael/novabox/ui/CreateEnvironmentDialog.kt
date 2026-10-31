@@ -74,6 +74,7 @@ fun CreateEnvironmentDialog(
     var audio by rememberSaveable(key) { mutableStateOf(initialConfig?.audio ?: AudioMode.AUTO) }
     var network by rememberSaveable(key) { mutableStateOf(initialConfig?.network ?: NetworkMode.NAT) }
     var mouseMode by rememberSaveable(key) { mutableStateOf(initialConfig?.mouseMode ?: MouseMode.TOUCHPAD) }
+    var mouseSensitivity by rememberSaveable(key) { mutableStateOf(initialConfig?.mouseSensitivity ?: 5) }
     var vsync by rememberSaveable(key) { mutableStateOf(initialConfig?.vsync ?: true) }
     var dxvkEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.dxvkEnabled ?: false) }
     var vkd3dEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.vkd3dEnabled ?: false) }
@@ -279,6 +280,13 @@ fun CreateEnvironmentDialog(
 
                 FormLabel("Controle do mouse")
                 ChoiceGrid(MouseMode.entries.map { it.label to it }, mouseMode, onSelect = { mouseMode = it })
+                FormLabel("Sensibilidade do mouse: $mouseSensitivity / 10")
+                Slider(
+                    value = mouseSensitivity.toFloat(),
+                    onValueChange = { mouseSensitivity = it.toInt().coerceIn(1, 10) },
+                    valueRange = 1f..10f,
+                    steps = 8
+                )
 
                 FormLabel("Idioma do ambiente")
                 ChoiceGrid(
@@ -370,6 +378,7 @@ fun CreateEnvironmentDialog(
                         audio = audio,
                         network = network,
                         mouseMode = mouseMode,
+                        mouseSensitivity = mouseSensitivity,
                         vsync = vsync,
                         dxvkEnabled = dxvkEnabled,
                         vkd3dEnabled = vkd3dEnabled,
