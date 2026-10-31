@@ -42,6 +42,7 @@ class ContainerRepository(context: Context) {
                             audio = enumOrDefault(item.optString("audio"), AudioMode.AUTO),
                             network = enumOrDefault(item.optString("network"), NetworkMode.NAT),
                             mouseMode = enumOrDefault(item.optString("mouseMode"), MouseMode.TOUCHPAD),
+                            mouseSensitivity = item.optInt("mouseSensitivity", 5),
                             vsync = item.optBoolean("vsync", true),
                             dxvkEnabled = item.optBoolean("dxvkEnabled", false),
                             vkd3dEnabled = item.optBoolean("vkd3dEnabled", false),
@@ -83,6 +84,7 @@ class ContainerRepository(context: Context) {
                     .put("audio", config.audio.name)
                     .put("network", config.network.name)
                     .put("mouseMode", config.mouseMode.name)
+                    .put("mouseSensitivity", config.mouseSensitivity)
                     .put("vsync", config.vsync)
                     .put("dxvkEnabled", config.dxvkEnabled)
                     .put("vkd3dEnabled", config.vkd3dEnabled)
