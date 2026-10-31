@@ -196,6 +196,18 @@ enum class Box64Preset(val label: String) {
     PERFORMANCE("Desempenho")
 }
 
+enum class PerformanceProfile(val label: String) {
+    POWER_SAVING("Economia"),
+    BALANCED("Equilibrado"),
+    PERFORMANCE("Alto desempenho")
+}
+
+enum class DisplayOrientation(val label: String) {
+    AUTO("Automática"),
+    PORTRAIT("Retrato"),
+    LANDSCAPE("Paisagem")
+}
+
 data class ContainerConfig(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
@@ -225,7 +237,29 @@ data class ContainerConfig(
     val fpsLimit: Int = 60,
     val locale: String = "pt_BR",
     val environmentVariables: String = "",
-    val sharedFolderPath: String = ""
+    val sharedFolderPath: String = "",
+    val performanceProfile: PerformanceProfile = PerformanceProfile.BALANCED,
+    val orientation: DisplayOrientation = DisplayOrientation.AUTO,
+    val clipboardSyncEnabled: Boolean = true,
+    val fileSharingEnabled: Boolean = false,
+    val keepScreenOn: Boolean = false,
+    val showFpsOverlay: Boolean = false,
+    val touchKeyboardEnabled: Boolean = true,
+    val gameModeEnabled: Boolean = false,
+    val gpuAccelerationEnabled: Boolean = true,
+    val highDpiEnabled: Boolean = true,
+    val mouseCaptureEnabled: Boolean = true,
+    val registryOptimizationsEnabled: Boolean = false,
+    val servicesOptimizationsEnabled: Boolean = false,
+    val androidAnimationsEnabled: Boolean = false,
+    val androidMultiWindowEnabled: Boolean = true,
+    val androidPlayServicesEnabled: Boolean = false,
+    val androidNotificationsEnabled: Boolean = true,
+    val androidBackgroundAppsEnabled: Boolean = true,
+    val androidUsbDebuggingEnabled: Boolean = false,
+    val androidBootAnimationEnabled: Boolean = true,
+    val startupArguments: String = "",
+    val dllOverrides: String = ""
 ) {
     val profile: OsProfile?
         get() = OsCatalog.find(osProfileId)
@@ -244,6 +278,8 @@ data class ContainerConfig(
         if (resolution !in supportedResolutions) return "Selecione uma resolução válida."
         if (environmentVariables.length > 2048) return "As variáveis de ambiente ultrapassaram 2048 caracteres."
         if (sharedFolderPath.length > 512) return "O caminho da pasta compartilhada é muito longo."
+        if (startupArguments.length > 1024) return "Os argumentos de inicialização ultrapassaram 1024 caracteres."
+        if (dllOverrides.length > 1024) return "As substituições de DLL ultrapassaram 1024 caracteres."
         if (locale !in supportedLocales) return "Selecione um idioma válido."
         return null
     }
