@@ -1,8 +1,6 @@
 package com.mikael.novabox.model
 
 import com.mikael.novabox.runtime.RuntimeComponentRegistry
-import com.mikael.novabox.runtime.RuntimeComponentState
-import com.mikael.novabox.model.RuntimeId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
