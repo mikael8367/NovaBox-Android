@@ -187,12 +187,21 @@ fun NovaBoxApp() {
                                 onDelete = { config ->
                                     val attachedPrograms = programs.filter { it.containerId == config.id }
                                     scope.launch {
-                                        withContext(Dispatchers.IO) {
-                                            attachedPrograms.forEach(programRepository::delete)
+                                        val deletionResults = withContext(Dispatchers.IO) {
+                                            attachedPrograms.map { entry -> entry.id to programRepository.delete(entry) }
                                         }
-                                        programs.removeAll { it.containerId == config.id }
-                                        containers.removeAll { item -> item.id == config.id }
-                                        repository.save(containers)
+                                        val deletedIds = deletionResults.filter { it.second }.map { it.first }.toSet()
+                                        programs.removeAll { it.id in deletedIds }
+                                        if (deletionResults.all { it.second }) {
+                                            containers.removeAll { item -> item.id == config.id }
+                                            repository.save(containers)
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Alguns programas não puderam ser removidos. O ambiente foi preservado.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
                                     }
                                 }
                             )
