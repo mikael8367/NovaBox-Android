@@ -96,6 +96,16 @@ class WineWorkspaceManager(context: Context) {
         }
     }
 
+    fun delete(configId: String): Boolean {
+        if (!SAFE_ID.matches(configId)) return false
+        return runCatching {
+            val canonicalRoot = root.canonicalFile
+            val workspace = File(canonicalRoot, configId).canonicalFile
+            workspace.toPath().startsWith(canonicalRoot.toPath()) &&
+                (!workspace.exists() || workspace.deleteRecursively())
+        }.getOrDefault(false)
+    }
+
     fun inspect(config: ContainerConfig): WineWorkspaceStatus {
         if (!SAFE_ID.matches(config.id)) {
             return WineWorkspaceStatus(WineWorkspaceState.INVALID, "Identificador do ambiente inválido.")
