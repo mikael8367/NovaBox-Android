@@ -36,20 +36,28 @@ As opções novas são salvas por ambiente e ambientes antigos recebem valores p
 
 Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. Windows/Wine está configurado para compartilhar a rede do Android hospedeiro quando o runtime estiver ativo. Android virtual usa o modo NAT como configuração desejada, mas precisa do encaminhamento de rede do QEMU para funcionar.
 
-## Motores e limitações atuais
+## Motores, instaladores e limitações atuais
 
-O catálogo reconhece e gerencia Wine (compatibilidade Windows), Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton.
+O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências.
 
-O gerenciador agora possui um registro técnico por componente, com arquivos esperados, dependências, ABI mínima e requisitos gráficos. A tela Motores valida arquivos reais no diretório privado do app, tamanho não zero e permissão de execução para binários. Os estados distinguem instalado, ausente, incompleto e incompatível com o aparelho. Marcadores vazios não são aceitos como instalação. A verificação de Turnip exige indícios de GPU Qualcomm Adreno e Vulkan; DXVK, VKD3D-Proton e Zink verificam o suporte Vulkan anunciado pelo Android.
+### Instalador verificado disponível
 
-**Limitação atual:** os pacotes nativos e seus instaladores ainda não estão publicados/integrados. Portanto, esta etapa entrega o gerenciador e a validação real dos componentes, mas não baixa nem instala os motores e ainda não executa Windows/Linux/DOS ou máquinas QEMU. Não considere a prévia visual como um sistema iniciado. Os pacotes seguintes precisam vir de fontes upstream confiáveis, com ABI correta, hashes e licenças verificadas.
+- **DXVK 3.1.1**: pacote oficial do projeto DXVK, baixado por HTTPS a partir da página de releases do upstream.
+- O instalador exige o tamanho publicado (18.041.512 bytes) e o SHA-256 fixado no catálogo.
+- O download mostra bytes reais recebidos e pode ser cancelado.
+- O extrator TAR.GZ rejeita caminhos absolutos, `..`, links e tipos de entrada não permitidos. Só extrai as DLLs listadas no manifesto, limita a expansão e valida todos os arquivos necessários.
+- A instalação ocorre em uma pasta temporária. A pasta anterior é preservada até a nova instalação passar pelas validações e ser movida para o destino.
+- Um arquivo incompleto, com hash incorreto ou com estrutura diferente é descartado; ele nunca é marcado como instalado.
 
-- Wine + Box64/Box86: caminho planejado para aplicativos Windows.
-- PRoot: caminho planejado para ambientes Linux de usuário.
-- DOSBox: caminho planejado para FreeDOS e aplicativos DOS.
-- QEMU: necessário para Android virtual, BSD, ReactOS e Haiku; ainda não integrado. Para Android convidado, também será necessário configurar a rede user-mode/NAT do QEMU. Os perfis Android são configurações de máquina convidada, não uma segunda instalação Android funcionando ainda.
+**Limitações do DXVK:** o pacote prepara as DLLs; não instala Wine, não fornece Vulkan e não inicia jogos sozinho. O upstream não declara suporte oficial ao Android, portanto a integração é experimental e depende de uma pilha Vulkan funcional e de Wine compatível. O aparelho também pode ser considerado incompatível pela verificação de recursos do Android.
 
-A prévia de desktop e o mouse atual são demonstrações visuais. O cursor ainda não envia eventos para uma sessão Wine/Linux real. Os perfis Android convidados também precisam de uma imagem de sistema e de um backend QEMU integrado antes de inicializar.
+### Motores ainda sem instalador
+
+Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip e VKD3D-Proton continuam no catálogo, mas não recebem um botão de download até haver um pacote Android/ARM64 com arquitetura, dependências, licença, formato e hash verificados. Pacotes Linux x86-64, arquivos-fonte e pacotes de drivers de outras GPUs não são tratados como binários Android instaláveis.
+
+Turnip é um driver Vulkan para GPUs Qualcomm Adreno. Ele não é adequado para GPUs PowerVR como a do Samsung Galaxy A12. DXVK, VKD3D-Proton e Zink também exigem Vulkan; a presença do componente no catálogo não garante compatibilidade com o aparelho.
+
+A seleção de perfil não baixa nem instala um sistema operacional. Windows/Wine, Linux, DOS e sistemas QEMU só poderão ser inicializados quando seus motores, imagens e integrações estiverem disponíveis. A prévia visual de desktop continua sendo uma demonstração, não uma máquina virtual em execução.
 
 ## Compilação e validação
 
