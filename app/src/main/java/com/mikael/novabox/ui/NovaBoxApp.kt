@@ -630,6 +630,7 @@ private fun SettingsScreen(containerCount: Int, onOpenRuntimes: () -> Unit) {
         SettingTile(Icons.Default.Tune, "Personalização", "CPU, memória, gráficos, rede e tela são ajustados em cada ambiente")
         SettingTile(Icons.Default.Terminal, "Motores e runtimes", "Consultar componentes necessários", onClick = onOpenRuntimes)
         SettingTile(Icons.Default.Computer, "Mouse virtual", "Controle por toque disponível na prévia da área de trabalho")
+        DeviceDiagnosticsCard()
         InfoNotice(
             title = "Sobre o NovaBox",
             body = "Um launcher de ambientes experimentais para Android. Criar um perfil não fornece uma licença nem uma imagem de Windows."
