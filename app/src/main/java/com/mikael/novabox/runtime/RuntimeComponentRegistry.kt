@@ -37,7 +37,7 @@ object RuntimeComponentRegistry {
         RuntimeComponentDefinition(
             RuntimeId.WINE, "Compatibilidade com aplicativos Windows",
             emptyList(),
-            listOf(listOf("bin/wine")), setOf("bin/wine"), arm64
+            listOf(listOf("bin/wine")), setOf("bin/wine")
         ),
         RuntimeComponentDefinition(
             RuntimeId.BOX64, "Tradução de aplicativos Linux x86-64 para ARM64",

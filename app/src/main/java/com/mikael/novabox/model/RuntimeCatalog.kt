@@ -21,11 +21,8 @@ object RuntimePlanner {
         return when (profile.engine) {
             EngineType.WINE_COMPATIBILITY -> buildList {
                 add(RuntimeId.WINE)
-                when (config.architecture) {
-                    CpuArchitecture.X86_64 -> add(RuntimeId.BOX64)
-                    CpuArchitecture.X86 -> add(RuntimeId.BOX86)
-                    CpuArchitecture.ARM64 -> Unit
-                }
+                // The bundled Winlator Wine is an x86_64 guest binary on an ARM64 Android host.
+                add(RuntimeId.BOX64)
                 if (config.graphics == GraphicsProfile.VIRGL) add(RuntimeId.VIRGL)
                 if (config.graphics == GraphicsProfile.ZINK) add(RuntimeId.ZINK)
                 if (config.graphics == GraphicsProfile.TURNIP) add(RuntimeId.TURNIP)

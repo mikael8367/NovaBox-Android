@@ -46,6 +46,18 @@ class ContainerConfigTest {
     }
 
     @Test
+    fun winlatorWineBundleAlwaysRequiresBox64OnArm64Host() {
+        val armGuest = ContainerConfig(
+            name = "Windows ARM profile",
+            osProfileId = "windows-10",
+            architecture = CpuArchitecture.ARM64
+        )
+        val required = RuntimePlanner.requiredFor(armGuest)
+        assertTrue(required.contains(RuntimeId.WINE))
+        assertTrue(required.contains(RuntimeId.BOX64))
+    }
+
+    @Test
     fun windowsDxvkOptionsAreAddedOnlyWhenSelected() {
         val base = ContainerConfig(name = "Windows", osProfileId = "windows-10")
         val configured = base.copy(dxvkEnabled = true, vkd3dEnabled = true)
