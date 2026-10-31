@@ -62,9 +62,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
     fun isInstalled(): Boolean {
         val marker = File(targetRoot, ".novabox-winlator-runtime")
         return marker.isFile && marker.readText().contains(WinlatorRuntimeManifest.SOURCE_COMMIT) &&
-            File(targetRoot, "usr/local/bin/box64").isFile &&
-            File(targetRoot, "opt/wine/bin/wine").isFile &&
-            File(targetRoot, "opt/wine/bin/wineboot").isFile
+            WinlatorRuntimeValidator.isValid(targetRoot)
     }
 
     suspend fun install(
@@ -114,6 +112,10 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
                 if (!file.setExecutable(true, true) && !file.canExecute()) {
                     throw IOException("Não foi possível habilitar a execução de $relative.")
                 }
+            }
+            val architectureErrors = WinlatorRuntimeValidator.validate(stagingDirectory)
+            if (architectureErrors.isNotEmpty()) {
+                throw IOException("Arquitetura do bundle Wine/Box64 inválida: " + architectureErrors.joinToString(" "))
             }
             File(stagingDirectory, ".novabox-winlator-runtime").writeText(
                 "source=${WinlatorRuntimeManifest.SOURCE_REPOSITORY}\n" +
