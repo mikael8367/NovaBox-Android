@@ -88,8 +88,11 @@ class RuntimePackageInstaller(private val context: Context) {
                 throw IOException("Não foi possível preservar a instalação anterior.")
             }
             if (!staging!!.renameTo(target)) {
-                if (backup.exists()) backup.renameTo(target)
-                throw IOException("Não foi possível concluir a instalação.")
+                val restored = !backup.exists() || backup.renameTo(target)
+                if (!restored) {
+                    throw IOException("A instalação falhou. A cópia anterior foi preservada em ${backup.name}.")
+                }
+                throw IOException("Não foi possível concluir a instalação; a versão anterior foi restaurada.")
             }
             if (backup.exists()) backup.deleteRecursively()
             staging = null
@@ -142,10 +145,12 @@ class RuntimePackageInstaller(private val context: Context) {
                 if (response != HttpURLConnection.HTTP_OK) {
                     throw IOException("Servidor respondeu HTTP $response.")
                 }
-                val length = connection.getHeaderFieldLong("Content-Length", -1L)
-                if (length != spec.expectedSizeBytes) {
+                val contentLength = connection.getHeaderFieldLong("Content-Length", -1L)
+                if (contentLength >= 0L && contentLength != spec.expectedSizeBytes) {
                     throw IOException("O tamanho recebido não corresponde ao pacote publicado.")
                 }
+                // The signed-off release manifest is the source of truth when a CDN omits Content-Length.
+                val length = spec.expectedSizeBytes
 
                 val digest = MessageDigest.getInstance("SHA-256")
                 var downloaded = 0L
