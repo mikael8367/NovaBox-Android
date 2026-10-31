@@ -149,6 +149,7 @@ fun CreateEnvironmentDialog(
                     } else {
                         CpuArchitecture.X86_64
                     }
+                    mouseMode = if (option == OsFamily.ANDROID) MouseMode.DIRECT else MouseMode.TOUCHPAD
                     error = null
                 }
             )
@@ -294,15 +295,17 @@ fun CreateEnvironmentDialog(
                 FormLabel("Rede")
                 ChoiceGrid(NetworkMode.entries.map { it.label to it }, network, onSelect = { network = it })
 
-                FormLabel("Controle do mouse")
+                FormLabel(if (family == OsFamily.ANDROID) "Controle de toque do Android convidado" else "Controle do mouse")
                 ChoiceGrid(MouseMode.entries.map { it.label to it }, mouseMode, onSelect = { mouseMode = it })
-                FormLabel("Sensibilidade do mouse: $mouseSensitivity / 10")
-                Slider(
-                    value = mouseSensitivity.toFloat(),
-                    onValueChange = { mouseSensitivity = it.toInt().coerceIn(1, 10) },
-                    valueRange = 1f..10f,
-                    steps = 8
-                )
+                if (family != OsFamily.ANDROID) {
+                    FormLabel("Sensibilidade do mouse: $mouseSensitivity / 10")
+                    Slider(
+                        value = mouseSensitivity.toFloat(),
+                        onValueChange = { mouseSensitivity = it.toInt().coerceIn(1, 10) },
+                        valueRange = 1f..10f,
+                        steps = 8
+                    )
+                }
 
                 FormLabel("Idioma do ambiente")
                 ChoiceGrid(
