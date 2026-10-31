@@ -1,5 +1,13 @@
 package com.mikael.novabox.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import com.mikael.novabox.data.ProgramEntry
+import com.mikael.novabox.data.ProgramRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
@@ -75,6 +83,7 @@ private enum class MainTab(val title: String, val icon: ImageVector) {
     HOME("Início", Icons.Default.Home),
     CONTAINERS("Ambientes", Icons.Default.Computer),
     RUNTIMES("Motores", Icons.Default.Memory),
+    PROGRAMS("Programas", Icons.Default.FolderOpen),
     SETTINGS("Ajustes", Icons.Default.Settings)
 }
 
@@ -83,6 +92,37 @@ fun NovaBoxApp() {
     val context = LocalContext.current
     val repository = remember { ContainerRepository(context) }
     val runtimeEngine = remember { RuntimeEngine(context) }
+    val programRepository = remember { ProgramRepository(context) }
+    val programs = remember {
+        mutableStateListOf<ProgramEntry>().apply { addAll(programRepository.load()) }
+    }
+    val scope = rememberCoroutineScope()
+    var pendingProgramContainer by remember { mutableStateOf<ContainerConfig?>(null) }
+    val programPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        val target = pendingProgramContainer
+        pendingProgramContainer = null
+        if (uri != null && target != null) {
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        programRepository.importProgram(target.id, uri)
+                    }
+                }.onSuccess { entry ->
+                    programs.removeAll { it.id == entry.id }
+                    programs.add(0, entry)
+                    Toast.makeText(context, "Programa importado e verificado.", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(
+                        context,
+                        error.message ?: "Não foi possível importar o programa.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
     val containers = remember {
         mutableStateListOf<ContainerConfig>().apply { addAll(repository.load()) }
     }
@@ -149,6 +189,23 @@ fun NovaBoxApp() {
                                 }
                             )
                             MainTab.RUNTIMES -> RuntimesScreen(runtimeEngine)
+                            MainTab.PROGRAMS -> ProgramsScreen(
+                                containers = containers,
+                                programs = programs,
+                                onImport = { config ->
+                                    pendingProgramContainer = config
+                                    programPicker.launch(arrayOf("*/*"))
+                                },
+                                onDelete = { entry ->
+                                    scope.launch {
+                                        val removed = withContext(Dispatchers.IO) {
+                                            programRepository.delete(entry)
+                                        }
+                                        if (removed) programs.removeAll { it.id == entry.id }
+                                        else Toast.makeText(context, "Não foi possível remover o arquivo.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            )
                             MainTab.SETTINGS -> SettingsScreen(
                                 containerCount = containers.size,
                                 onOpenRuntimes = { selectedTab = MainTab.RUNTIMES }
