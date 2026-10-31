@@ -7,6 +7,8 @@ import com.mikael.novabox.model.AudioMode
 import com.mikael.novabox.model.Box64Preset
 import com.mikael.novabox.model.ContainerConfig
 import com.mikael.novabox.model.CpuArchitecture
+import com.mikael.novabox.model.DisplayOrientation
+import com.mikael.novabox.model.PerformanceProfile
 import com.mikael.novabox.model.GraphicsProfile
 import com.mikael.novabox.model.MouseMode
 import com.mikael.novabox.model.NetworkMode
@@ -55,7 +57,29 @@ class ContainerRepository(context: Context) {
                             fpsLimit = item.optInt("fpsLimit", 60),
                             locale = item.optString("locale", "pt_BR"),
                             environmentVariables = item.optString("environmentVariables", ""),
-                            sharedFolderPath = item.optString("sharedFolderPath", "")
+                            sharedFolderPath = item.optString("sharedFolderPath", ""),
+                            performanceProfile = enumOrDefault(item.optString("performanceProfile"), PerformanceProfile.BALANCED),
+                            orientation = enumOrDefault(item.optString("orientation"), DisplayOrientation.AUTO),
+                            clipboardSyncEnabled = item.optBoolean("clipboardSyncEnabled", true),
+                            fileSharingEnabled = item.optBoolean("fileSharingEnabled", false),
+                            keepScreenOn = item.optBoolean("keepScreenOn", false),
+                            showFpsOverlay = item.optBoolean("showFpsOverlay", false),
+                            touchKeyboardEnabled = item.optBoolean("touchKeyboardEnabled", true),
+                            gameModeEnabled = item.optBoolean("gameModeEnabled", false),
+                            gpuAccelerationEnabled = item.optBoolean("gpuAccelerationEnabled", true),
+                            highDpiEnabled = item.optBoolean("highDpiEnabled", true),
+                            mouseCaptureEnabled = item.optBoolean("mouseCaptureEnabled", true),
+                            registryOptimizationsEnabled = item.optBoolean("registryOptimizationsEnabled", false),
+                            servicesOptimizationsEnabled = item.optBoolean("servicesOptimizationsEnabled", false),
+                            androidAnimationsEnabled = item.optBoolean("androidAnimationsEnabled", false),
+                            androidMultiWindowEnabled = item.optBoolean("androidMultiWindowEnabled", true),
+                            androidPlayServicesEnabled = item.optBoolean("androidPlayServicesEnabled", false),
+                            androidNotificationsEnabled = item.optBoolean("androidNotificationsEnabled", true),
+                            androidBackgroundAppsEnabled = item.optBoolean("androidBackgroundAppsEnabled", true),
+                            androidUsbDebuggingEnabled = item.optBoolean("androidUsbDebuggingEnabled", false),
+                            androidBootAnimationEnabled = item.optBoolean("androidBootAnimationEnabled", true),
+                            startupArguments = item.optString("startupArguments", ""),
+                            dllOverrides = item.optString("dllOverrides", "")
                         )
                     }.getOrNull()
                     if (config != null && config.validate() == null) add(config)
@@ -98,6 +122,28 @@ class ContainerRepository(context: Context) {
                     .put("locale", config.locale)
                     .put("environmentVariables", config.environmentVariables)
                     .put("sharedFolderPath", config.sharedFolderPath)
+                    .put("performanceProfile", config.performanceProfile.name)
+                    .put("orientation", config.orientation.name)
+                    .put("clipboardSyncEnabled", config.clipboardSyncEnabled)
+                    .put("fileSharingEnabled", config.fileSharingEnabled)
+                    .put("keepScreenOn", config.keepScreenOn)
+                    .put("showFpsOverlay", config.showFpsOverlay)
+                    .put("touchKeyboardEnabled", config.touchKeyboardEnabled)
+                    .put("gameModeEnabled", config.gameModeEnabled)
+                    .put("gpuAccelerationEnabled", config.gpuAccelerationEnabled)
+                    .put("highDpiEnabled", config.highDpiEnabled)
+                    .put("mouseCaptureEnabled", config.mouseCaptureEnabled)
+                    .put("registryOptimizationsEnabled", config.registryOptimizationsEnabled)
+                    .put("servicesOptimizationsEnabled", config.servicesOptimizationsEnabled)
+                    .put("androidAnimationsEnabled", config.androidAnimationsEnabled)
+                    .put("androidMultiWindowEnabled", config.androidMultiWindowEnabled)
+                    .put("androidPlayServicesEnabled", config.androidPlayServicesEnabled)
+                    .put("androidNotificationsEnabled", config.androidNotificationsEnabled)
+                    .put("androidBackgroundAppsEnabled", config.androidBackgroundAppsEnabled)
+                    .put("androidUsbDebuggingEnabled", config.androidUsbDebuggingEnabled)
+                    .put("androidBootAnimationEnabled", config.androidBootAnimationEnabled)
+                    .put("startupArguments", config.startupArguments)
+                    .put("dllOverrides", config.dllOverrides)
             )
         }
         preferences.edit().putString(KEY_CONTAINERS, array.toString()).apply()
