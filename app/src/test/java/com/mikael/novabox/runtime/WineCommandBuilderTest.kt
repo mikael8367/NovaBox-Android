@@ -39,7 +39,7 @@ class WineCommandBuilderTest {
         assertTrue(env["BOX64_LD_LIBRARY_PATH"]!!.contains("lib/x86_64-linux-gnu"))
         assertEquals("1", env["BOX64_DYNAREC"])
         assertEquals("0", env["BOX64_DYNACACHE"])
-        assertEquals(":0", env["DISPLAY"])
+        assertFalse(env.containsKey("DISPLAY"))
     }
 
     @Test fun includesBox64RcOnlyWhenPresent() {

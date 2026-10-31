@@ -7,6 +7,7 @@ import com.mikael.novabox.data.ProgramEntry
 import com.mikael.novabox.data.ProgramRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -141,6 +142,11 @@ fun NovaBoxApp() {
             containers.forEach { config -> put(config.id, wineWorkspaceManager.inspect(config)) }
         }
     }
+    val runningWine = remember {
+        mutableStateMapOf<String, Boolean>().apply {
+            containers.forEach { config -> put(config.id, WineProcessSupervisor.isRunning(config.id)) }
+        }
+    }
 
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
     var activePreview by remember { mutableStateOf<ContainerConfig?>(null) }
@@ -236,6 +242,49 @@ fun NovaBoxApp() {
                                 containers = containers,
                                 programs = programs,
                                 workspaceStatuses = workspaceStatuses,
+                                runningEnvironmentIds = runningWine.filterValues { it }.keys,
+                                onLaunchProgram = { config, entry ->
+                                    scope.launch {
+                                        try {
+                                            val process = withContext(Dispatchers.IO) {
+                                                WineRuntimeLauncher(context).launchProgram(config, entry)
+                                            }
+                                            runningWine[config.id] = true
+                                            Toast.makeText(
+                                                context,
+                                                "Processo Box64/Wine iniciado. A janela gráfica ainda não está integrada.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            while (process.isAlive) delay(400)
+                                            runningWine[config.id] = false
+                                            Toast.makeText(
+                                                context,
+                                                "Processo Wine encerrado (código ${process.exitValue()}). Consulte wine-session.log.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } catch (error: Exception) {
+                                            runningWine[config.id] = false
+                                            Toast.makeText(
+                                                context,
+                                                error.message ?: "Não foi possível iniciar o processo Wine.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                },
+                                onStopWine = { config ->
+                                    scope.launch {
+                                        val stopped = withContext(Dispatchers.IO) {
+                                            WineProcessSupervisor.stop(config.id)
+                                        }
+                                        runningWine[config.id] = WineProcessSupervisor.isRunning(config.id)
+                                        Toast.makeText(
+                                            context,
+                                            if (stopped) "Processo Wine encerrado." else "Não foi possível encerrar o processo Wine.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                },
                                 onPrepareWorkspace = { config ->
                                     scope.launch {
                                         val status = withContext(Dispatchers.IO) {

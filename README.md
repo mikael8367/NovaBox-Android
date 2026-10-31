@@ -97,3 +97,8 @@ Nenhum APK é gerado automaticamente.
 ## Pacote Android
 
 `com.mikael.novabox`
+
+
+### Experimental Wine process launch
+
+Imported EXE/MSI/COM entries now have an explicit process-launch action wired to the Box64/Wine launcher, with per-environment stop/status handling and output appended to `wine-workspaces/<environment-id>/logs/wine-session.log`. This is process-level execution only. The app does not yet provide an integrated X11/Wayland display, audio, or input backend, so GUI applications are not expected to show a window. The Wine environment intentionally no longer hardcodes `DISPLAY=:0`; a display must be provided by a real, integrated backend before graphical execution can be claimed.

@@ -37,7 +37,6 @@ object WineEnvironmentBuilder {
             "BOX64_UNITYPLAYER" to "0",
             "BOX64_NOBANNER" to "1",
             "WINEDEBUG" to "-all",
-            "DISPLAY" to ":0"
         )
         val rcFile = File(rootfs, "etc/config.box64rc")
         if (rcFile.isFile) env["BOX64_RCFILE"] = rcFile.absolutePath

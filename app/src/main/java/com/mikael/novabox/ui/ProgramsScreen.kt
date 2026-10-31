@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -49,6 +51,9 @@ fun ProgramsScreen(
     containers: List<ContainerConfig>,
     programs: List<ProgramEntry>,
     workspaceStatuses: Map<String, WineWorkspaceStatus>,
+    runningEnvironmentIds: Set<String>,
+    onLaunchProgram: (ContainerConfig, ProgramEntry) -> Unit,
+    onStopWine: (ContainerConfig) -> Unit,
     onPrepareWorkspace: (ContainerConfig) -> Unit,
     onInitializePrefix: (ContainerConfig) -> Unit,
     onImport: (ContainerConfig) -> Unit,
@@ -67,9 +72,8 @@ fun ProgramsScreen(
             body = "O NovaBox copia EXE, MSI e COM para o armazenamento privado do aplicativo, calcula SHA-256 e limita cada arquivo a 512 MiB. Os arquivos originais não são alterados."
         )
         InfoNotice(
-            title = "Execução ainda não liberada",
-            body = "A biblioteca está pronta para organizar os programas, mas executá-los com interface gráfica exige Wine + Box64 compatíveis e um backend de tela, áudio e entrada integrado. O NovaBox não vai simular uma execução."
-            ,
+            title = "Execução experimental",
+            body = "O NovaBox pode iniciar o processo Box64/Wine e registrar a saída no log. A janela gráfica ainda não aparece: o servidor de tela, áudio e entrada não está integrado. Não trate um processo iniciado como um Windows funcional.",
             warning = true
         )
         if (containers.isEmpty()) {
@@ -98,6 +102,29 @@ fun ProgramsScreen(
                             SmallTag("${entries.size} arquivo(s)")
                         }
                         if (config.profile?.engine == EngineType.WINE_COMPATIBILITY) {
+                            val isRunning = config.id in runningEnvironmentIds
+                            Row(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp))
+                                    .background(if (isRunning) Color(0xFF3A2522) else NovaPanelRaised)
+                                    .clickable(enabled = isRunning) { onStopWine(config) }
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    if (isRunning) Icons.Default.Stop else Icons.Default.Terminal,
+                                    contentDescription = null,
+                                    tint = if (isRunning) Color(0xFFFF9A8C) else NovaMuted,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(Modifier.size(6.dp))
+                                Text(
+                                    if (isRunning) "Encerrar processo Wine" else "Wine parado",
+                                    color = if (isRunning) Color(0xFFFF9A8C) else NovaMuted,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                             val workspace = workspaceStatuses[config.id]
                             val initialized = workspace?.state == WineWorkspaceState.WINE_INITIALIZED
                             val prepared = workspace?.state == WineWorkspaceState.WORKSPACE_PREPARED
@@ -162,6 +189,17 @@ fun ProgramsScreen(
                                         )
                                     }
                                     Icon(
+                                        Icons.Default.PlayArrow,
+                                        contentDescription = "Iniciar processo Wine (experimental)",
+                                        tint = if (config.id in runningEnvironmentIds) NovaMuted else NovaGreen,
+                                        modifier = Modifier.size(22.dp)
+                                            .clickable(enabled = config.id !in runningEnvironmentIds) {
+                                                onLaunchProgram(config, entry)
+                                            }
+                                            .padding(1.dp)
+                                    )
+                                    Spacer(Modifier.size(7.dp))
+                                    Icon(
                                         Icons.Default.VerifiedUser,
                                         contentDescription = "Verificar integridade",
                                         tint = NovaGreen,
@@ -182,7 +220,7 @@ fun ProgramsScreen(
             }
         }
         Text(
-            "Os arquivos ficam no diretório privado do NovaBox e são removidos quando você os exclui nesta tela ou desinstala o aplicativo.",
+            "O botão de iniciar executa apenas o processo experimental do Wine. Sem display integrado, programas com interface gráfica não terão janela. Os arquivos ficam no armazenamento privado do NovaBox.",
             color = NovaMuted,
             fontSize = 9.sp,
             lineHeight = 13.sp
