@@ -252,6 +252,19 @@ fun NovaBoxApp() {
                                         if (removed) programs.removeAll { it.id == entry.id }
                                         else Toast.makeText(context, "Não foi possível remover o arquivo.", Toast.LENGTH_SHORT).show()
                                     }
+                                },
+                                onVerify = { entry ->
+                                    scope.launch {
+                                        val valid = withContext(Dispatchers.IO) {
+                                            programRepository.verifyIntegrity(entry)
+                                        }
+                                        Toast.makeText(
+                                            context,
+                                            if (valid) "Integridade confirmada: SHA-256 corresponde ao arquivo."
+                                            else "Falha na integridade: o arquivo foi alterado, está incompleto ou não está acessível.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 }
                             )
                             MainTab.SETTINGS -> SettingsScreen(
