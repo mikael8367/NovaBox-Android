@@ -17,6 +17,7 @@ data class RuntimePackageSpec(
     val archiveRootDirectory: String,
     val outputDirectory: String,
     val allowedArchiveFiles: Set<String>,
+    val requiredArchiveFiles: Set<String>,
     val maxExpandedBytes: Long = 256L * 1024L * 1024L
 )
 
@@ -32,6 +33,17 @@ object RuntimePackageCatalog {
         archiveRootDirectory = "dxvk-3.1.1",
         outputDirectory = "lib/dxvk",
         allowedArchiveFiles = setOf(
+            "LICENSE",
+            "x32/d3d9.dll",
+            "x32/d3d10core.dll",
+            "x32/d3d11.dll",
+            "x32/dxgi.dll",
+            "x64/d3d9.dll",
+            "x64/d3d10core.dll",
+            "x64/d3d11.dll",
+            "x64/dxgi.dll"
+        ),
+        requiredArchiveFiles = setOf(
             "x32/d3d9.dll",
             "x32/d3d10core.dll",
             "x32/d3d11.dll",
