@@ -52,7 +52,7 @@ A biblioteca não executa programas ainda. Para execução gráfica real, ainda 
 
 ## Motores, instaladores e limitações atuais
 
-O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências.
+O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências. Para binários executáveis nativos, a validação também lê o cabeçalho ELF e confere classe, endianness e arquitetura (ARM64, ARM32, x86 ou x86-64) com a ABI permitida pelo componente. Assim, um arquivo x86-64 não é aceito como executável ARM64 apenas por ter nome e permissão corretos. Essa checagem não prova compatibilidade com o linker/Bionic, dependências dinâmicas, SELinux ou capacidade de iniciar uma sessão.
 
 ### Instalador verificado disponível
 
