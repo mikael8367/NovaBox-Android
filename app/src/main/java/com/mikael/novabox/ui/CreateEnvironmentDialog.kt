@@ -214,11 +214,11 @@ fun CreateEnvironmentDialog(
                     onSelect = { network = it }
                 )
                 InfoNotice(
-                    title = if (network == NetworkMode.NAT) "Internet compartilhada ativada" else "Internet desativada",
+                    title = if (network == NetworkMode.NAT) "Compartilhamento de Internet selecionado" else "Internet desativada",
                     body = if (network == NetworkMode.NAT && family == OsFamily.WINDOWS) {
-                        "O ambiente Windows via Wine deverá usar a conexão de rede do Android. Isso depende do runtime Wine estar integrado e funcionando."
+                        "O ambiente Windows via Wine poderá usar a conexão de rede do Android quando o runtime Wine estiver integrado e funcionando. O motor ainda não está conectado neste protótipo."
                     } else if (network == NetworkMode.NAT) {
-                        "O Android convidado usará NAT/encaminhamento pela conexão do celular quando o QEMU com rede virtual estiver integrado."
+                        "O Android convidado poderá usar NAT pela conexão do celular depois que o QEMU, a interface de rede virtual e o encaminhamento forem integrados. Isso ainda não funciona nesta versão."
                     } else {
                         "Este ambiente ficará configurado sem acesso à rede."
                     },
