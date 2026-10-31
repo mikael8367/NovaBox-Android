@@ -205,12 +205,17 @@ fun NovaBoxApp() {
                                             val workspaceRemoved = withContext(Dispatchers.IO) {
                                                 wineWorkspaceManager.delete(config.id)
                                             }
-                                            if (!workspaceRemoved) {
-                                                Toast.makeText(context, "Não foi possível remover a estrutura privada do ambiente.", Toast.LENGTH_LONG).show()
+                                            if (workspaceRemoved) {
+                                                workspaceStatuses.remove(config.id)
+                                                containers.removeAll { item -> item.id == config.id }
+                                                repository.save(containers)
+                                            } else {
+                                                Toast.makeText(
+                                                    context,
+                                                    "A estrutura privada não pôde ser removida. O ambiente foi preservado.",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
                                             }
-                                            workspaceStatuses.remove(config.id)
-                                            containers.removeAll { item -> item.id == config.id }
-                                            repository.save(containers)
                                         } else {
                                             Toast.makeText(
                                                 context,
