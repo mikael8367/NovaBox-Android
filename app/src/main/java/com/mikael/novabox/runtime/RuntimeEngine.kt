@@ -22,7 +22,7 @@ class RuntimeEngine(private val context: Context) {
         Build.BOARD,
         Build.MODEL,
         Build.MANUFACTURER,
-        Build.SOC_MODEL
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else ""
     ).joinToString(" ").lowercase()
     private val hasVulkan = context.packageManager.hasSystemFeature(
         PackageManager.FEATURE_VULKAN_HARDWARE_VERSION
@@ -42,12 +42,19 @@ class RuntimeEngine(private val context: Context) {
             return EngineAvailability.Unsupported("Não existe uma cadeia de execução configurada para este perfil.")
         }
 
-        val missing = required.filterNot(::isComponentInstalled)
+        val statuses = required.map(::componentStatus)
+        val unsupported = statuses.firstOrNull {
+            it.state == RuntimeComponentState.UNSUPPORTED_DEVICE
+        }
+        if (unsupported != null) {
+            return EngineAvailability.Unsupported(unsupported.message)
+        }
+        val missing = statuses.filter { it.state != RuntimeComponentState.INSTALLED }.map { it.id }
         if (missing.isNotEmpty()) return EngineAvailability.Missing(missing)
 
-        val executablePaths = required.flatMap { definition ->
-            RuntimeComponentRegistry.get(definition).executablePaths
-                .map { File(runtimeDirectory(definition), it) }
+        val executablePaths = required.flatMap { id ->
+            RuntimeComponentRegistry.get(id).executablePaths
+                .map { File(runtimeDirectory(id), it) }
                 .filter { it.isFile }
                 .map { it.absolutePath }
         }
