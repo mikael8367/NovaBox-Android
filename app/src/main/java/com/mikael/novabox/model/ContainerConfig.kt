@@ -141,6 +141,7 @@ data class ContainerConfig(
     val audio: AudioMode = AudioMode.AUTO,
     val network: NetworkMode = NetworkMode.NAT,
     val mouseMode: MouseMode = MouseMode.TOUCHPAD,
+    val mouseSensitivity: Int = 5,
     val vsync: Boolean = true,
     val dxvkEnabled: Boolean = false,
     val vkd3dEnabled: Boolean = false,
@@ -166,6 +167,7 @@ data class ContainerConfig(
         if (cpuCores !in 1..8) return "A quantidade de núcleos deve ficar entre 1 e 8."
         if (diskGb !in 2..128) return "O armazenamento deve ficar entre 2 GB e 128 GB."
         if (dpi !in 80..240) return "O DPI deve ficar entre 80 e 240."
+        if (mouseSensitivity !in 1..10) return "A sensibilidade do mouse deve ficar entre 1 e 10."
         if (graphicsMemoryMb !in 128..2048) return "A memória gráfica virtual deve ficar entre 128 MB e 2048 MB."
         if (fpsLimit !in supportedFpsLimits) return "Selecione um limite de FPS válido."
         if (resolution !in supportedResolutions) return "Selecione uma resolução válida."
