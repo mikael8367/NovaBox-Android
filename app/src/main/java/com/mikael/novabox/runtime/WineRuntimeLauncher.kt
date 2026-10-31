@@ -123,7 +123,7 @@ class WineRuntimeLauncher(context: Context) {
             .redirectOutput(ProcessBuilder.Redirect.appendTo(logFile))
         builder.environment().putAll(WineEnvironmentBuilder.build(root, workspace))
         return try {
-            builder.start()
+            WineProcessSupervisor.start(config.id) { builder.start() }
         } catch (error: Exception) {
             throw IOException("Não foi possível iniciar Box64/Wine: " + (error.message ?: "erro desconhecido"), error)
         }
