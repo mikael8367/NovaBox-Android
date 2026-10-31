@@ -53,16 +53,43 @@ class RuntimeEngine(private val context: Context) {
         if (missing.isNotEmpty()) return EngineAvailability.Missing(missing)
 
         val executablePaths = required.flatMap { id ->
-            RuntimeComponentRegistry.get(id).executablePaths
-                .map { File(runtimeDirectory(id), it) }
-                .filter { it.isFile }
-                .map { it.absolutePath }
+            when (id) {
+                RuntimeId.WINE -> listOf(File(context.filesDir, "runtimes/rootfs/opt/wine/bin/wine").absolutePath)
+                RuntimeId.BOX64 -> listOf(File(context.filesDir, "runtimes/rootfs/usr/local/bin/box64").absolutePath)
+                else -> RuntimeComponentRegistry.get(id).executablePaths
+                    .map { File(runtimeDirectory(id), it) }
+                    .filter { it.isFile }
+                    .map { it.absolutePath }
+            }
         }
         return EngineAvailability.Ready(executablePaths)
     }
 
     fun componentStatus(id: RuntimeId): RuntimeComponentStatus {
         val definition = RuntimeComponentRegistry.get(id)
+        if (id == RuntimeId.PROOT) {
+            val installed = ProotInstaller(context).isInstalled()
+            return RuntimeComponentStatus(
+                id,
+                if (installed) RuntimeComponentState.INSTALLED else RuntimeComponentState.NOT_INSTALLED,
+                if (installed) "PRoot Android ARM64 instalado; binário e loaders encontrados."
+                else "Instale o pacote PRoot Android ARM64 verificado.",
+                definition.dependencies
+            )
+        }
+        if (id == RuntimeId.WINE || id == RuntimeId.BOX64) {
+            val incompatible = deviceIncompatibility(definition)
+            if (incompatible != null) {
+                return RuntimeComponentStatus(id, RuntimeComponentState.UNSUPPORTED_DEVICE, incompatible, definition.dependencies)
+            }
+            val installed = WinlatorRuntimeBundleInstaller(context).isInstalled()
+            return RuntimeComponentStatus(
+                id,
+                if (installed) RuntimeComponentState.INSTALLED else RuntimeComponentState.NOT_INSTALLED,
+                if (installed) "Bundle Winlator Wine/Box64 0.4.4 instalado e validado." else "Instale o bundle Wine/Box64 para disponibilizar este componente.",
+                definition.dependencies
+            )
+        }
         val incompatibility = deviceIncompatibility(definition)
         if (incompatibility != null) {
             return RuntimeComponentStatus(
@@ -76,7 +103,8 @@ class RuntimeEngine(private val context: Context) {
             group.any { relativePath ->
                 val file = File(directory, relativePath)
                 file.isFile && file.length() > 0L &&
-                    (relativePath !in definition.executablePaths || file.canExecute())
+                    (relativePath !in definition.executablePaths ||
+                        (file.canExecute() && ElfAbiValidator.isCompatible(file, definition.requiredAbi)))
             }
         }
 
@@ -107,6 +135,22 @@ class RuntimeEngine(private val context: Context) {
 
     fun isComponentInstalled(id: RuntimeId): Boolean =
         componentStatus(id).state == RuntimeComponentState.INSTALLED
+
+    fun componentFilesPresent(id: RuntimeId): Boolean {
+        if (id == RuntimeId.PROOT) return ProotInstaller(context).isInstalled()
+        if (id == RuntimeId.WINE || id == RuntimeId.BOX64) {
+            return WinlatorRuntimeBundleInstaller(context).isInstalled()
+        }
+        val definition = RuntimeComponentRegistry.get(id)
+        val directory = runtimeDirectory(id)
+        return definition.requiredFileGroups.all { group ->
+            group.any { relativePath ->
+                val file = File(directory, relativePath)
+                file.isFile && file.length() > 0L &&
+                    (relativePath !in definition.executablePaths || file.canExecute())
+            }
+        }
+    }
 
     fun runtimeDirectory(id: RuntimeId): File =
         File(context.filesDir, "runtimes/${id.name.lowercase()}")

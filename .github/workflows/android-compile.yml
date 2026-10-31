@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   compile:
     runs-on: ubuntu-latest
@@ -22,5 +25,5 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compile Kotlin sources
+      - name: Compile Kotlin sources and run unit tests
         run: gradle :app:compileDebugKotlin :app:testDebugUnitTest

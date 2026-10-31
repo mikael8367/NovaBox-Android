@@ -5,7 +5,7 @@ Launcher experimental de ambientes de compatibilidade para Android, com interfac
 ## Interface
 
 - Tema escuro próprio com detalhes verde-neon.
-- Navegação inferior animada: Início, Ambientes, Motores e Ajustes.
+- Navegação inferior animada: Início, Ambientes, Motores, Programas e Ajustes.
 - Biblioteca de perfis com editar, excluir e salvar configurações.
 - Prévia de desktop com cursor de mouse controlado pelo toque.
 - Interface responsiva e sem imagens ou telas copiadas de outros launchers.
@@ -26,7 +26,9 @@ O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista,
 - Backend gráfico.
 - Áudio, Internet compartilhada (NAT) ou rede desativada e modo de mouse.
 - Tela cheia e desktop virtual.
-- Opções Wine, DXVK, VKD3D-Proton, ESYNC, FSYNC e WoW64.
+- Opções Wine prefix configuration: the launcher now explicitly creates 64-bit prefixes (WINEARCH=win64), matching the bundled x86-64 Wine build. The per-environment Esync/Fsync toggles are passed to Wine only when enabled. This does not add a graphical display backend or guarantee that Fsync is supported by the Android kernel.
+
+Wine, DXVK, VKD3D-Proton, ESYNC, FSYNC e WoW64.
 - Perfil Box64, idioma, variáveis de ambiente e caminho de pasta compartilhada.
 - Perfil de desempenho (economia/equilibrado/alto desempenho), orientação, tela ligada, contador de FPS, teclado virtual, aceleração gráfica, captura do mouse, área de transferência e compartilhamento de arquivos.
 - Windows/Wine: modo de jogo, ajustes de registro e serviços como opções de perfil, DPI alto, argumentos de inicialização e substituições de DLL.
@@ -36,20 +38,53 @@ As opções novas são salvas por ambiente e ambientes antigos recebem valores p
 
 Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. Windows/Wine está configurado para compartilhar a rede do Android hospedeiro quando o runtime estiver ativo. Android virtual usa o modo NAT como configuração desejada, mas precisa do encaminhamento de rede do QEMU para funcionar.
 
-## Motores e limitações atuais
+## Workspaces Wine (preparação inicial)
 
-O catálogo reconhece e gerencia Wine (compatibilidade Windows), Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton.
+Na aba **Programas**, cada perfil Windows/Wine pode criar uma estrutura privada e isolada em `filesDir/wine-workspaces/<environment-id>`. O gerenciador valida o perfil e o identificador, impede saída do diretório raiz por path traversal, cria pastas separadas para prefix, home, temporários, logs e arquivos compartilhados e grava metadados versionados por substituição temporária.
 
-O gerenciador agora possui um registro técnico por componente, com arquivos esperados, dependências, ABI mínima e requisitos gráficos. A tela Motores valida arquivos reais no diretório privado do app, tamanho não zero e permissão de execução para binários. Os estados distinguem instalado, ausente, incompleto e incompatível com o aparelho. Marcadores vazios não são aceitos como instalação. A verificação de Turnip exige indícios de GPU Qualcomm Adreno e Vulkan; DXVK, VKD3D-Proton e Zink verificam o suporte Vulkan anunciado pelo Android.
+O estado inicial é registrado como `WORKSPACE_ONLY` e `wineBootCompleted=false`. Depois que o bundle Wine/Box64 estiver instalado, a ação **Inicializar prefixo Wine** executa `wineboot --init`; somente quando o processo termina com código zero os metadados passam para `WINE_INITIALIZED`. A criação preserva um prefixo já inicializado, e a exclusão do ambiente também remove sua estrutura privada; se a limpeza falhar, o perfil é preservado.
 
-**Limitação atual:** os pacotes nativos e seus instaladores ainda não estão publicados/integrados. Portanto, esta etapa entrega o gerenciador e a validação real dos componentes, mas não baixa nem instala os motores e ainda não executa Windows/Linux/DOS ou máquinas QEMU. Não considere a prévia visual como um sistema iniciado. Os pacotes seguintes precisam vir de fontes upstream confiáveis, com ABI correta, hashes e licenças verificadas.
+A inicialização do prefixo e a preparação do processo estão implementadas. Foi adicionada uma ponte opcional para detectar e abrir o aplicativo Termux:X11 (`com.termux.x11`), com consulta de visibilidade de pacote no manifesto. O usuário precisa instalar e iniciar o servidor X11 separadamente; abrir o aplicativo não garante que o display `:0` esteja ativo nem que Wine consiga desenhar nele. Ainda faltam a ligação do backend gráfico ao processo Wine, encaminhamento real de mouse/teclado, áudio e ciclo de vida de processos, seguida de testes em aparelho.
 
-- Wine + Box64/Box86: caminho planejado para aplicativos Windows.
-- PRoot: caminho planejado para ambientes Linux de usuário.
-- DOSBox: caminho planejado para FreeDOS e aplicativos DOS.
-- QEMU: necessário para Android virtual, BSD, ReactOS e Haiku; ainda não integrado. Para Android convidado, também será necessário configurar a rede user-mode/NAT do QEMU. Os perfis Android são configurações de máquina convidada, não uma segunda instalação Android funcionando ainda.
+## Biblioteca de programas e diagnóstico
 
-A prévia de desktop e o mouse atual são demonstrações visuais. O cursor ainda não envia eventos para uma sessão Wine/Linux real. Os perfis Android convidados também precisam de uma imagem de sistema e de um backend QEMU integrado antes de inicializar.
+A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Cada item também oferece uma verificação manual de integridade: o NovaBox relê o conteúdo em fluxo, recalcula SHA-256 e compara com o hash registrado na importação. A leitura ocorre em segundo plano para não bloquear a interface. Nenhuma permissão ampla de armazenamento é solicitada.
+
+O cartão de cada ambiente Wine também oferece **Abrir log do Wine**. O visualizador lê apenas o final do arquivo, limitado a 32 KiB, valida o identificador e confirma que o caminho permanece dentro da pasta privada do ambiente. Enquanto a aba Programas está aberta, o estado dos processos é atualizado periodicamente para refletir encerramentos externos ou inesperados. Esses recursos melhoram o diagnóstico, mas não substituem o backend gráfico ainda ausente.
+
+O bundle Wine/Box64 e a camada de preparação do prefixo estão disponíveis. A aba Motores agora inclui um cartão de integração opcional com Termux:X11 para verificar e abrir o app externo. A biblioteca ainda não oferece execução gráfica funcional por botão: o XServer não é embutido nem iniciado automaticamente, e faltam o canal gráfico conectado ao Wine, integração real de entrada e áudio, clipboard e ciclo de vida completo da sessão. O cartão de diagnóstico nas configurações mostra modelo/Android, ABI, RAM, espaço livre, OpenGL ES e presença da feature Vulkan; o relatório pode ser copiado para suporte.
+
+## Motores, instaladores e limitações atuais
+
+O catálogo reconhece Wine, Box64, Box86, PRoot, Alpine Linux ARM64, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências. Para binários executáveis nativos, a validação também lê o cabeçalho ELF e confere classe, endianness e arquitetura (ARM64, ARM32, x86 ou x86-64) com a ABI permitida pelo componente. Assim, um arquivo x86-64 não é aceito como executável ARM64 apenas por ter nome e permissão corretos. Essa checagem não prova compatibilidade com o linker/Bionic, dependências dinâmicas, SELinux ou capacidade de iniciar uma sessão.
+
+### Instalador verificado disponível
+
+- **DXVK 3.1.1**: pacote da [release oficial do projeto DXVK](https://github.com/doitsujin/dxvk/releases/tag/v3.1.1), baixado por HTTPS. A licença zlib/libpng é preservada quando presente no arquivo.
+- O instalador exige o tamanho publicado (18.041.512 bytes) e o SHA-256 fixado no catálogo.
+- O download mostra bytes reais recebidos e pode ser cancelado.
+- O extrator TAR.GZ rejeita caminhos absolutos, `..`, links e tipos de entrada não permitidos. Só extrai as DLLs listadas no manifesto, limita a expansão e valida todos os arquivos necessários.
+- Os arquivos são preparados em uma pasta temporária. A pasta anterior é preservada até a nova preparação passar pelas validações e ser movida para o destino.
+- Um arquivo incompleto, com hash incorreto ou com estrutura diferente é descartado; ele nunca é marcado como instalado.
+
+**Limitações do DXVK:** o pacote apenas armazena as DLLs no diretório privado do motor; ainda não as registra automaticamente em um prefixo Wine, não instala Wine, não fornece Vulkan e não inicia jogos sozinho. O upstream não declara suporte oficial ao Android, portanto a integração é experimental e depende de uma pilha Vulkan funcional e de Wine compatível. O aparelho também pode ser considerado incompatível pela verificação de recursos do Android.
+
+### Bundle Wine + Box64 disponível
+
+- **Wine + Box64 0.4.4**: bundle baseado nos artefatos publicados pelo projeto Winlator, com rootfs Linux/glibc, patches, Box64 ARM64 e PulseAudio.
+- Os arquivos são fixados no commit upstream `8077f374ef2d54127b088de9e8cd7b4af14d9c8b` e verificados por tamanho e Git blob SHA-1 antes da extração.
+- O instalador suporta TAR+Zstandard, rejeita traversal, links que escapem do rootfs, dispositivos e FIFOs, limita a expansão e prepara tudo em staging antes da troca atômica.
+- A instalação exige aproximadamente 1,7 GB livres. Os avisos e licenças de terceiros estão em `THIRD_PARTY_NOTICES.md`.
+
+O bundle fornece a base real de Wine/Box64 e inicialização de prefixo; não significa que a sessão Windows gráfica esteja pronta. O backend XServer/display, entrada e áudio ainda não estão integrados.
+
+### Motores ainda sem instalador
+
+O instalador de **Alpine Linux 3.24.3 ARM64** baixa o minirootfs oficial, confere tamanho e SHA-256 fixados, extrai em staging com proteção contra path traversal e symlinks externos e ativa por troca atômica. O instalador de **PRoot Android ARM64** baixa um pacote de build upstream fixado em commit imutável, verifica tamanho e Git blob SHA-1, extrai apenas arquivos regulares em staging e testa o executável com `--version` antes de ativar. A aba Motores oferece os dois instaladores e um terminal de comandos Alpine que só habilita a execução quando o rootfs e o PRoot estão presentes. A inicialização ainda precisa ser validada em aparelho real. Box86, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip e VKD3D-Proton continuam sem instaladores completos e verificados neste projeto. O gerenciador QEMU agora prepara discos RAW esparsos, valida kernel/initrd, limita RAM pelo estado de memória do Android e monta uma linha de comando ARM64 com rede NAT opcional e log serial. Ainda não há binário QEMU Android/ARM64 instalável, tela/VNC nem firmware/imagem Android convidada; portanto a VM não pode ser iniciada no app ainda. Pacotes Linux x86-64 não são tratados como binários Android instaláveis.
+
+Turnip é um driver Vulkan para GPUs Qualcomm Adreno. Ele não é adequado para GPUs PowerVR como a do Samsung Galaxy A12. DXVK, VKD3D-Proton e Zink também exigem Vulkan; a presença do componente no catálogo não garante compatibilidade com o aparelho.
+
+A seleção de perfil não baixa nem instala um sistema operacional automaticamente. O app oferece a instalação opcional do bundle Wine/Box64 e do rootfs Alpine ARM64; o primeiro ainda não tem sessão gráfica e o segundo ainda não inicializa sem PRoot. DOS e Android virtual continuam sem motores integrados. A prévia visual de desktop continua sendo uma demonstração, não uma máquina virtual em execução.
 
 ## Compilação e validação
 
@@ -66,3 +101,22 @@ Nenhum APK é gerado automaticamente.
 ## Pacote Android
 
 `com.mikael.novabox`
+
+
+### Experimental Wine process launch
+
+Imported EXE/MSI/COM entries now have an explicit process-launch action wired to the Box64/Wine launcher, with per-environment stop/status handling and output appended to `wine-workspaces/<environment-id>/logs/wine-session.log`. This is process-level execution only. The app does not yet provide an integrated X11/Wayland display, audio, or input backend, so GUI applications are not expected to show a window. The Wine environment intentionally no longer hardcodes `DISPLAY=:0`; a display must be provided by a real, integrated backend before graphical execution can be claimed.
+
+
+### Inicialização do Termux:X11 pelo NovaBox
+
+O cartão de servidor gráfico pode solicitar o início do display `:1` através do serviço oficial `com.termux.app.RunCommandService` do Termux e abrir o aplicativo Termux:X11. Para isso, Termux e Termux:X11 devem estar instalados, o usuário deve conceder a permissão Android `com.termux.permission.RUN_COMMAND` ao NovaBox e habilitar `allow-external-apps=true` em `~/.termux/termux.properties` no Termux. O app não altera essa configuração automaticamente.
+
+O resultado `START_REQUESTED` significa apenas que o serviço aceitou o pedido e a Activity externa foi aberta; não é uma confirmação de que o servidor está pronto. Esta etapa ainda não encaminha o socket X11 para o processo Wine isolado no sandbox do NovaBox. O transporte gráfico, autenticação X11 e integração de entrada/áudio continuam pendentes e não são anunciados como funcionais.
+
+
+### Ponte X11 local para Wine (experimental)
+
+O cartão de servidor gráfico agora oferece uma segunda etapa: iniciar uma ponte TCP/Unix com `socat` dentro do Termux. O comando instala `socat` quando necessário, aguarda até 45 segundos pelo socket `$TMPDIR/.X11-unix/X1` e cria um listener em `127.0.0.1:6001`, encaminhando conexões para o display X11 `:1`. O listener é limitado ao loopback do aparelho e não é exposto à rede local. O ambiente Wine passa a receber `DISPLAY=127.0.0.1:1`.
+
+Ordem de uso: iniciar Termux:X11/display :1, aguardar a tela ficar pronta e então iniciar a ponte local. Ambos os comandos dependem do serviço RUN_COMMAND e da configuração `allow-external-apps=true`. A solicitação de início não verifica o processo `socat`, autenticação X11, conexão real ou renderização. Se o servidor exigir Xauthority, será necessário configurar a autorização de forma segura; o NovaBox não desativa o controle de acesso do X11. A ponte é experimental e precisa ser validada no aparelho antes de afirmar que janelas Wine aparecem.

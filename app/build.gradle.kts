@@ -16,18 +16,14 @@ android {
         versionName = "0.3.0"
     }
 
-    buildFeatures {
-        compose = true
-    }
+    buildFeatures { compose = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
@@ -46,7 +42,10 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
-    testImplementation("junit:junit:4.13.2")
+    // Native ARM64 Zstandard decoder + hardened TAR reader for Winlator's .tzst payloads.
+    implementation("com.github.luben:zstd-jni:1.5.6-9@aar")
+    implementation("org.apache.commons:commons-compress:1.27.1")
 
+    testImplementation("junit:junit:4.13.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

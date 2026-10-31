@@ -1,5 +1,14 @@
 package com.mikael.novabox.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import com.mikael.novabox.data.ProgramEntry
+import com.mikael.novabox.data.ProgramRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
@@ -47,9 +56,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,11 +82,17 @@ import com.mikael.novabox.model.OsFamily
 import com.mikael.novabox.model.RuntimeId
 import com.mikael.novabox.runtime.EngineAvailability
 import com.mikael.novabox.runtime.RuntimeEngine
+import com.mikael.novabox.runtime.WineProcessSupervisor
+import com.mikael.novabox.runtime.WineLogReader
+import com.mikael.novabox.runtime.WineRuntimeLauncher
+import com.mikael.novabox.runtime.WineWorkspaceManager
+import com.mikael.novabox.runtime.WineWorkspaceStatus
 
 private enum class MainTab(val title: String, val icon: ImageVector) {
     HOME("Início", Icons.Default.Home),
     CONTAINERS("Ambientes", Icons.Default.Computer),
     RUNTIMES("Motores", Icons.Default.Memory),
+    PROGRAMS("Programas", Icons.Default.FolderOpen),
     SETTINGS("Ajustes", Icons.Default.Settings)
 }
 
@@ -83,11 +101,68 @@ fun NovaBoxApp() {
     val context = LocalContext.current
     val repository = remember { ContainerRepository(context) }
     val runtimeEngine = remember { RuntimeEngine(context) }
+    val wineWorkspaceManager = remember { WineWorkspaceManager(context) }
+    val programRepository = remember { ProgramRepository(context) }
+    val programs = remember { mutableStateListOf<ProgramEntry>() }
+    LaunchedEffect(programRepository) {
+        val loadedPrograms = withContext(Dispatchers.IO) { programRepository.load() }
+        programs.clear()
+        programs.addAll(loadedPrograms)
+    }
+    val scope = rememberCoroutineScope()
+    var pendingProgramContainer by remember { mutableStateOf<ContainerConfig?>(null) }
+    val programPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        val target = pendingProgramContainer
+        pendingProgramContainer = null
+        if (uri != null && target != null) {
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        programRepository.importProgram(target.id, uri)
+                    }
+                }.onSuccess { entry ->
+                    programs.removeAll { it.id == entry.id }
+                    programs.add(0, entry)
+                    Toast.makeText(context, "Programa importado e verificado.", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(
+                        context,
+                        error.message ?: "Não foi possível importar o programa.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
     val containers = remember {
         mutableStateListOf<ContainerConfig>().apply { addAll(repository.load()) }
     }
+    val workspaceStatuses = remember {
+        mutableStateMapOf<String, WineWorkspaceStatus>().apply {
+            containers.forEach { config -> put(config.id, wineWorkspaceManager.inspect(config)) }
+        }
+    }
+    val runningWine = remember {
+        mutableStateMapOf<String, Boolean>().apply {
+            containers.forEach { config -> put(config.id, WineProcessSupervisor.isRunning(config.id)) }
+        }
+    }
+    val wineLogs = remember { mutableStateMapOf<String, String>() }
+
 
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
+    LaunchedEffect(selectedTab, containers.map { it.id }) {
+        while (selectedTab == MainTab.PROGRAMS) {
+            val snapshot = withContext(Dispatchers.IO) {
+                containers.associate { config -> config.id to WineProcessSupervisor.isRunning(config.id) }
+            }
+            runningWine.clear()
+            runningWine.putAll(snapshot)
+            delay(900)
+        }
+    }
     var activePreview by remember { mutableStateOf<ContainerConfig?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var editingConfig by remember { mutableStateOf<ContainerConfig?>(null) }
@@ -143,12 +218,173 @@ fun NovaBoxApp() {
                                     showEditor = true
                                 },
                                 onOpenPreview = { activePreview = it },
-                                onDelete = {
-                                    containers.removeAll { item -> item.id == it.id }
-                                    repository.save(containers)
+                                onDelete = { config ->
+                                    val attachedPrograms = programs.filter { it.containerId == config.id }
+                                    scope.launch {
+                                        val processStopped = withContext(Dispatchers.IO) {
+                                            !WineProcessSupervisor.isRunning(config.id) ||
+                                                WineProcessSupervisor.stop(config.id)
+                                        }
+                                        runningWine[config.id] = WineProcessSupervisor.isRunning(config.id)
+                                        if (!processStopped) {
+                                            Toast.makeText(
+                                                context,
+                                                "O processo Wine não encerrou. O ambiente foi preservado para evitar apagar arquivos em uso.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            return@launch
+                                        }
+                                        val deletionResults = withContext(Dispatchers.IO) {
+                                            attachedPrograms.map { entry -> entry.id to programRepository.delete(entry) }
+                                        }
+                                        val deletedIds = deletionResults.filter { it.second }.map { it.first }.toSet()
+                                        programs.removeAll { it.id in deletedIds }
+                                        if (deletionResults.all { it.second }) {
+                                            val workspaceRemoved = withContext(Dispatchers.IO) {
+                                                wineWorkspaceManager.delete(config.id)
+                                            }
+                                            if (workspaceRemoved) {
+                                                workspaceStatuses.remove(config.id)
+                                                containers.removeAll { item -> item.id == config.id }
+                                                repository.save(containers)
+                                            } else {
+                                                Toast.makeText(
+                                                    context,
+                                                    "A estrutura privada não pôde ser removida. O ambiente foi preservado.",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Alguns programas não puderam ser removidos. O ambiente foi preservado.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
                                 }
                             )
                             MainTab.RUNTIMES -> RuntimesScreen(runtimeEngine)
+                            MainTab.PROGRAMS -> ProgramsScreen(
+                                containers = containers,
+                                programs = programs,
+                                workspaceStatuses = workspaceStatuses,
+                                runningEnvironmentIds = runningWine.filterValues { it }.keys,
+                                onLaunchProgram = { config, entry ->
+                                    scope.launch {
+                                        try {
+                                            val process = withContext(Dispatchers.IO) {
+                                                WineRuntimeLauncher(context).launchProgram(config, entry)
+                                            }
+                                            runningWine[config.id] = true
+                                            Toast.makeText(
+                                                context,
+                                                "Processo Box64/Wine iniciado. A janela gráfica ainda não está integrada.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            while (process.isAlive) delay(400)
+                                            runningWine[config.id] = false
+                                            Toast.makeText(
+                                                context,
+                                                "Processo Wine encerrado (código ${process.exitValue()}). Consulte wine-session.log.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } catch (error: Exception) {
+                                            runningWine[config.id] = false
+                                            Toast.makeText(
+                                                context,
+                                                error.message ?: "Não foi possível iniciar o processo Wine.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                },
+                                onStopWine = { config ->
+                                    scope.launch {
+                                        val stopped = withContext(Dispatchers.IO) {
+                                            WineProcessSupervisor.stop(config.id)
+                                        }
+                                        runningWine[config.id] = WineProcessSupervisor.isRunning(config.id)
+                                        Toast.makeText(
+                                            context,
+                                            if (stopped) "Processo Wine encerrado." else "Não foi possível encerrar o processo Wine.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                },
+                                onPrepareWorkspace = { config ->
+                                    scope.launch {
+                                        val status = withContext(Dispatchers.IO) {
+                                            wineWorkspaceManager.prepare(config)
+                                        }
+                                        workspaceStatuses[config.id] = status
+                                        Toast.makeText(context, status.message, Toast.LENGTH_LONG).show()
+                                    }
+                                },
+                                onInitializePrefix = { config ->
+                                    scope.launch {
+                                        try {
+                                            val exitCode = withContext(Dispatchers.IO) {
+                                                WineRuntimeLauncher(context).initializePrefix(config).waitFor()
+                                            }
+                                            val status = withContext(Dispatchers.IO) {
+                                                if (exitCode == 0) wineWorkspaceManager.markWineBootCompleted(config.id)
+                                                wineWorkspaceManager.inspect(config)
+                                            }
+                                            workspaceStatuses[config.id] = status
+                                            Toast.makeText(
+                                                context,
+                                                if (exitCode == 0 && status.state.name == "WINE_INITIALIZED") "Prefixo Wine inicializado."
+                                                else "wineboot terminou com código $exitCode. Confira o log do ambiente.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } catch (error: Exception) {
+                                            Toast.makeText(context, error.message ?: "Não foi possível inicializar o Wine.", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                },
+                                onImport = { config ->
+                                    pendingProgramContainer = config
+                                    programPicker.launch(arrayOf("*/*"))
+                                },
+                                onDelete = { entry ->
+                                    scope.launch {
+                                        val removed = withContext(Dispatchers.IO) {
+                                            programRepository.delete(entry)
+                                        }
+                                        if (removed) programs.removeAll { it.id == entry.id }
+                                        else Toast.makeText(context, "Não foi possível remover o arquivo.", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                onVerify = { entry ->
+                                    scope.launch {
+                                        val valid = withContext(Dispatchers.IO) {
+                                            programRepository.verifyIntegrity(entry)
+                                        }
+                                        Toast.makeText(
+                                            context,
+                                            if (valid) "Integridade confirmada: SHA-256 corresponde ao arquivo."
+                                            else "Falha na integridade: o arquivo foi alterado, está incompleto ou não está acessível.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                },
+                                logContents = wineLogs,
+                                onViewLog = { config ->
+                                    scope.launch {
+                                        wineLogs[config.id] = withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                WineLogReader.readTail(
+                                                    java.io.File(context.filesDir, "wine-workspaces"),
+                                                    config.id
+                                                )
+                                            }.getOrElse { error ->
+                                                error.message ?: "Não foi possível ler o log."
+                                            }
+                                        }
+                                    }
+                                }
+                            )
                             MainTab.SETTINGS -> SettingsScreen(
                                 containerCount = containers.size,
                                 onOpenRuntimes = { selectedTab = MainTab.RUNTIMES }
@@ -484,21 +720,42 @@ private fun ContainerCard(
 
 @Composable
 private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
+    var refreshCounter by remember { mutableStateOf(0) }
+    val statusRows = remember(runtimeEngine, refreshCounter) {
+        RuntimeId.entries.map { id -> id to runtimeEngine.componentStatus(id) }
+    }
     Column(
         Modifier.fillMaxSize().background(NovaBackground).statusBarsPadding()
             .padding(horizontal = 17.dp, vertical = 15.dp)
     ) {
-        PageHeader("Compatibilidade", "Motores", "12 componentes • estado verificado no armazenamento do app.")
+        PageHeader("Compatibilidade", "Motores", "13 componentes • estado verificado no armazenamento do app.")
         Spacer(Modifier.height(12.dp))
         InfoNotice(
             title = "Gerenciador de componentes",
-            body = "O NovaBox agora verifica arquivos reais, permissões de execução e requisitos do aparelho. Um marcador vazio não conta como instalação. Os instaladores de pacotes nativos ainda precisam ser publicados e validados antes de liberar downloads.",
+            body = "O NovaBox verifica arquivos reais, permissões de execução, dependências e compatibilidade. Só pacotes com origem e SHA-256 validados recebem botão de instalação.",
             warning = true
         )
-        Spacer(Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            items(RuntimeId.entries.toList(), key = { it.name }) { runtime ->
-                val status = runtimeEngine.componentStatus(runtime)
+        Spacer(Modifier.height(10.dp))
+        XServerCard()
+        Spacer(Modifier.height(10.dp))
+        RuntimePackageInstallCard(
+            runtimeEngine = runtimeEngine,
+            onInstallChanged = { refreshCounter += 1 }
+        )
+        Spacer(Modifier.height(10.dp))
+        LinuxRootfsInstallCard(
+            onInstallChanged = { refreshCounter += 1 }
+        )
+        Spacer(Modifier.height(10.dp))
+        ProotInstallCard(onInstallChanged = { refreshCounter += 1 })
+        Spacer(Modifier.height(10.dp))
+        LinuxTerminalCard()
+        Spacer(Modifier.height(10.dp))
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            items(statusRows, key = { it.first.name }) { (runtime, status) ->
                 val (label, tint) = when (status.state) {
                     com.mikael.novabox.runtime.RuntimeComponentState.INSTALLED -> "Instalado" to NovaGreen
                     com.mikael.novabox.runtime.RuntimeComponentState.NOT_INSTALLED -> "Não instalado" to NovaWarning
@@ -527,6 +784,14 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
                         }
                         Text(runtime.detail, color = NovaMuted, fontSize = 10.sp, lineHeight = 14.sp)
                         Text(status.message, color = tint, fontSize = 10.sp, lineHeight = 14.sp)
+                        if (runtime != RuntimeId.LINUX_ROOTFS && com.mikael.novabox.runtime.RuntimePackageCatalog.packageFor(runtime) == null) {
+                            Text(
+                                com.mikael.novabox.runtime.RuntimePackageCatalog.unavailableReason(runtime),
+                                color = NovaMuted,
+                                fontSize = 9.sp,
+                                lineHeight = 13.sp
+                            )
+                        }
                         if (status.dependencies.isNotEmpty()) {
                             Text(
                                 "Relacionados: " + status.dependencies.joinToString { it.title },
@@ -553,6 +818,7 @@ private fun SettingsScreen(containerCount: Int, onOpenRuntimes: () -> Unit) {
         SettingTile(Icons.Default.Tune, "Personalização", "CPU, memória, gráficos, rede e tela são ajustados em cada ambiente")
         SettingTile(Icons.Default.Terminal, "Motores e runtimes", "Consultar componentes necessários", onClick = onOpenRuntimes)
         SettingTile(Icons.Default.Computer, "Mouse virtual", "Controle por toque disponível na prévia da área de trabalho")
+        DeviceDiagnosticsCard()
         InfoNotice(
             title = "Sobre o NovaBox",
             body = "Um launcher de ambientes experimentais para Android. Criar um perfil não fornece uma licença nem uma imagem de Windows."
