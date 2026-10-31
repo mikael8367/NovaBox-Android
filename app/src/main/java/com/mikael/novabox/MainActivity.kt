@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -80,7 +81,18 @@ private fun NovaBoxApp() {
     var selectedTab by remember { mutableStateOf(Tab.Home) }
     val containers = remember { mutableStateListOf<String>() }
 
-    MaterialTheme {
+    val colors = darkColorScheme(
+        primary = Neon,
+        onPrimary = Background,
+        background = Background,
+        onBackground = Color.White,
+        surface = Panel,
+        onSurface = Color.White,
+        secondary = Neon,
+        onSecondary = Background
+    )
+
+    MaterialTheme(colorScheme = colors) {
         Scaffold(
             containerColor = Background,
             bottomBar = {
