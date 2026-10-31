@@ -24,12 +24,12 @@ O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista,
 - Armazenamento virtual.
 - Resolução, DPI, limite de FPS e memória gráfica virtual (parâmetro de perfil, não reserva de VRAM física).
 - Backend gráfico.
-- Áudio, rede e modo de mouse.
+- Áudio, Internet compartilhada (NAT) ou rede desativada e modo de mouse.
 - Tela cheia e desktop virtual.
 - Opções Wine, DXVK, VKD3D-Proton, ESYNC, FSYNC e WoW64.
 - Perfil Box64, idioma, variáveis de ambiente e caminho de pasta compartilhada.
 
-Os dados dos ambientes são persistidos no armazenamento privado do aplicativo.
+Os dados dos ambientes são persistidos no armazenamento privado do aplicativo. Windows/Wine está configurado para compartilhar a rede do Android hospedeiro quando o runtime estiver ativo. Android virtual usa o modo NAT como configuração desejada, mas precisa do encaminhamento de rede do QEMU para funcionar.
 
 ## Motores e limitações atuais
 
@@ -40,7 +40,7 @@ A integração dos binários nativos ainda não está concluída. O app verifica
 - Wine + Box64/Box86: caminho planejado para aplicativos Windows.
 - PRoot: caminho planejado para ambientes Linux de usuário.
 - DOSBox: caminho planejado para FreeDOS e aplicativos DOS.
-- QEMU: necessário para Android virtual, BSD, ReactOS e Haiku; ainda não integrado. Os perfis Android são configurações de máquina convidada, não uma segunda instalação Android funcionando ainda.
+- QEMU: necessário para Android virtual, BSD, ReactOS e Haiku; ainda não integrado. Para Android convidado, também será necessário configurar a rede user-mode/NAT do QEMU. Os perfis Android são configurações de máquina convidada, não uma segunda instalação Android funcionando ainda.
 
 A prévia de desktop e o mouse atual são demonstrações visuais. O cursor ainda não envia eventos para uma sessão Wine/Linux real. Os perfis Android convidados também precisam de uma imagem de sistema e de um backend QEMU integrado antes de inicializar.
 
