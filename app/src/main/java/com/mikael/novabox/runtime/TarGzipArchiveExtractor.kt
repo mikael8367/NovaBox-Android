@@ -19,6 +19,7 @@ internal object TarGzipArchiveExtractor {
         rootDirectory: String,
         outputDirectory: String,
         allowedFiles: Set<String>,
+        requiredFiles: Set<String> = allowedFiles,
         maxExpandedBytes: Long
     ) {
         require(rootDirectory.isNotBlank() && !rootDirectory.contains('/')) {
@@ -27,6 +28,9 @@ internal object TarGzipArchiveExtractor {
         require(isSafeRelativePath(outputDirectory)) { "Destino interno inválido." }
         require(allowedFiles.isNotEmpty() && allowedFiles.all(::isSafeRelativePath)) {
             "Lista de arquivos permitidos inválida."
+        }
+        require(requiredFiles.all { it in allowedFiles }) {
+            "A lista de arquivos obrigatórios precisa fazer parte da lista permitida."
         }
 
         if (!destination.exists() && !destination.mkdirs()) {
@@ -101,7 +105,7 @@ internal object TarGzipArchiveExtractor {
             }
         }
 
-        val missing = allowedFiles - written
+        val missing = requiredFiles - written
         if (missing.isNotEmpty()) {
             throw IOException("O pacote está incompleto. Arquivos ausentes: ${missing.joinToString()}")
         }
