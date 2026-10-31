@@ -12,7 +12,7 @@ class ContainerConfigTest {
         assertTrue(OsCatalog.byFamily(OsFamily.WINDOWS).size >= 10)
         assertTrue(OsCatalog.byFamily(OsFamily.LINUX).size >= 10)
         assertTrue(OsCatalog.byFamily(OsFamily.BSD).isNotEmpty())
-        assertTrue(OsCatalog.byFamily(OsFamily.ANDROID).size >= 10)
+        assertTrue(OsCatalog.byFamily(OsFamily.ANDROID).size >= 50)
         assertTrue(OsCatalog.byFamily(OsFamily.OTHER).isNotEmpty())
     }
 
@@ -82,26 +82,23 @@ class ContainerConfigTest {
     }
 
     @Test
-    fun androidGuestProfilesRequireQemuVirtualization() {
-        val androidVersions = listOf(
-            "android-7-1", "android-8-1", "android-9", "android-10",
-            "android-11", "android-12", "android-13", "android-14",
-            "android-15", "android-16", "android-x86", "android-x86-64",
-            "bliss-os", "prime-os"
-        )
+    fun everyAndroidGuestProfileUsesQemuVirtualization() {
+        val androidProfiles = OsCatalog.byFamily(OsFamily.ANDROID)
+        assertTrue("Expected a large Android catalog", androidProfiles.size >= 50)
 
-        androidVersions.forEach { profileId ->
-            val profile = OsCatalog.find(profileId)
-            assertNotNull("Missing profile: $profileId", profile)
-            assertEquals(OsFamily.ANDROID, profile?.family)
-            assertEquals(EngineType.ANDROID_VIRTUALIZATION, profile?.engine)
-
+        androidProfiles.forEach { profile ->
+            assertEquals(EngineType.ANDROID_VIRTUALIZATION, profile.engine)
             val config = ContainerConfig(
                 name = "Android guest",
-                osProfileId = profileId,
-                architecture = CpuArchitecture.ARM64
+                osProfileId = profile.id,
+                architecture = when (profile.id) {
+                    "android-x86", "android-x86-32" -> CpuArchitecture.X86
+                    "android-x86-64", "bliss-os", "prime-os" -> CpuArchitecture.X86_64
+                    else -> CpuArchitecture.ARM64
+                }
             )
             assertEquals(listOf(RuntimeId.QEMU), RuntimePlanner.requiredFor(config))
+            assertEquals(null, config.validate())
         }
     }
 
