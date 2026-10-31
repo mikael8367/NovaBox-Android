@@ -8,6 +8,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -20,6 +21,21 @@ data class ProgramEntry(
     val sha256: String,
     val importedAt: Long
 )
+
+object ProgramIntegrityVerifier {
+    fun sha256(input: InputStream): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        input.use { source ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val count = source.read(buffer)
+                if (count < 0) break
+                if (count > 0) digest.update(buffer, 0, count)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }
+}
 
 object ProgramFilePolicy {
     const val MAX_PROGRAM_BYTES = 512L * 1024L * 1024L
@@ -166,6 +182,17 @@ class ProgramRepository(private val context: Context) {
             if (error is IOException) throw error
             throw IOException(error.message ?: "Falha ao importar o programa.", error)
         }
+    }
+
+    fun verifyIntegrity(entry: ProgramEntry): Boolean {
+        val file = fileFor(entry) ?: return false
+        if (!file.isFile || file.length() != entry.sizeBytes ||
+            !entry.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))
+        ) return false
+        return runCatching {
+            file.inputStream().use { ProgramIntegrityVerifier.sha256(it) }
+                .equals(entry.sha256, ignoreCase = true)
+        }.getOrDefault(false)
     }
 
     fun delete(entry: ProgramEntry): Boolean {
