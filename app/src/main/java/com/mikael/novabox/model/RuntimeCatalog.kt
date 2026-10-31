@@ -1,7 +1,7 @@
 package com.mikael.novabox.model
 
 enum class RuntimeId(val title: String, val purpose: String, val detail: String) {
-    WINE("Wine", "Compatibilidade com APIs Windows", "Executa aplicativos Windows sobre um ambiente Unix; não é uma instalação completa do Windows."),
+    WINE("Windows (Wine)", "Compatibilidade com APIs Windows", "Executa aplicativos Windows sobre um ambiente Unix; não é uma instalação completa do Windows."),
     BOX64("Box64", "Tradução x86-64", "Executa programas Linux x86-64 em hosts ARM64 compatíveis."),
     BOX86("Box86", "Tradução x86", "Executa programas Linux x86 de 32 bits em hosts ARM compatíveis."),
     PROOT("PRoot", "Ambientes Linux", "Prepara ambientes Linux de usuário sem exigir root; não é uma máquina virtual completa."),
