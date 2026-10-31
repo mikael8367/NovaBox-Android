@@ -30,7 +30,7 @@ object RuntimeComponentRegistry {
         RuntimeComponentDefinition(RuntimeId.WINE, "Compatibilidade com aplicativos Windows", emptyList(), listOf(listOf("bin/wine")), setOf("bin/wine")),
         RuntimeComponentDefinition(RuntimeId.BOX64, "Tradução de aplicativos Linux x86-64 para ARM64", emptyList(), listOf(listOf("bin/box64")), setOf("bin/box64"), arm64),
         RuntimeComponentDefinition(RuntimeId.BOX86, "Tradução de aplicativos Linux x86 de 32 bits", emptyList(), listOf(listOf("bin/box86")), setOf("bin/box86"), arm64 + arm32),
-        RuntimeComponentDefinition(RuntimeId.PROOT, "Ambiente Linux de usuário sem root", emptyList(), listOf(listOf("root/bin/proot"), listOf("root/libexec/proot")), setOf("root/bin/proot"), arm64),
+        RuntimeComponentDefinition(RuntimeId.PROOT, "Ambiente Linux de usuário sem root", emptyList(), listOf(listOf("root/bin/proot")), setOf("root/bin/proot"), arm64),
         RuntimeComponentDefinition(RuntimeId.LINUX_ROOTFS, "Rootfs Alpine Linux ARM64", emptyList(),
             listOf(listOf("rootfs/bin/busybox"), listOf("rootfs/lib/ld-musl-aarch64.so.1"), listOf("rootfs/etc/alpine-release")),
             setOf("rootfs/bin/busybox"), arm64),

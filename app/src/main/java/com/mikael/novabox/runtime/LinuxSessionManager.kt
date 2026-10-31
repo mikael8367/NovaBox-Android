@@ -31,6 +31,7 @@ object LinuxCommandPolicy {
 }
 
 class LinuxSessionManager(context: Context) {
+    private val context = context.applicationContext
     private val filesDir = context.filesDir.canonicalFile
     private val runtimeRoot = File(filesDir, "runtimes")
     private val proot = File(runtimeRoot, "proot/root/bin/proot")

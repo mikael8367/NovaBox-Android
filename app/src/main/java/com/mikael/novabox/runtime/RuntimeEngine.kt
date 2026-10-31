@@ -67,6 +67,16 @@ class RuntimeEngine(private val context: Context) {
 
     fun componentStatus(id: RuntimeId): RuntimeComponentStatus {
         val definition = RuntimeComponentRegistry.get(id)
+        if (id == RuntimeId.PROOT) {
+            val installed = ProotInstaller(context).isInstalled()
+            return RuntimeComponentStatus(
+                id,
+                if (installed) RuntimeComponentState.INSTALLED else RuntimeComponentState.NOT_INSTALLED,
+                if (installed) "PRoot Android ARM64 instalado; binário e loaders encontrados."
+                else "Instale o pacote PRoot Android ARM64 verificado.",
+                definition.dependencies
+            )
+        }
         if (id == RuntimeId.WINE || id == RuntimeId.BOX64) {
             val incompatible = deviceIncompatibility(definition)
             if (incompatible != null) {
@@ -127,6 +137,7 @@ class RuntimeEngine(private val context: Context) {
         componentStatus(id).state == RuntimeComponentState.INSTALLED
 
     fun componentFilesPresent(id: RuntimeId): Boolean {
+        if (id == RuntimeId.PROOT) return ProotInstaller(context).isInstalled()
         if (id == RuntimeId.WINE || id == RuntimeId.BOX64) {
             return WinlatorRuntimeBundleInstaller(context).isInstalled()
         }
