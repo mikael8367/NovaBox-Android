@@ -12,7 +12,7 @@ Launcher experimental de ambientes de compatibilidade para Android, com interfac
 
 ## Perfis de sistemas
 
-O catálogo oferece perfis de Windows (95 até 11), distribuições Linux, BSD e outros sistemas, como FreeDOS, ReactOS, Haiku e Android-x86.
+O catálogo oferece perfis de Windows (3.1, 95, 98, ME, NT 4.0, 2000, XP, Vista, 7, 8, 8.1, 10 e 11), distribuições Linux (Ubuntu, Debian, Mint, Fedora, Arch, Manjaro, Alpine, openSUSE, Kali, Raspberry Pi OS e outras), BSD (FreeBSD, OpenBSD, NetBSD e DragonFly BSD) e outros como FreeDOS, ReactOS, Haiku, Android-x86, Solaris/illumos, OS/2 e BeOS. macOS e ChromeOS aparecem apenas como não suportados.
 
 **Importante:** selecionar um perfil não baixa nem instala o sistema operacional. Os perfis descrevem o tipo de ambiente e a cadeia de compatibilidade necessária.
 
@@ -20,9 +20,9 @@ O catálogo oferece perfis de Windows (95 até 11), distribuições Linux, BSD e
 
 - Família e versão do sistema.
 - Arquitetura do programa.
-- CPU e memória configuráveis.
+- CPU, memória e perfil Box64 configuráveis.
 - Armazenamento virtual.
-- Resolução, DPI, limite de FPS e memória gráfica virtual.
+- Resolução, DPI, limite de FPS e memória gráfica virtual (parâmetro de perfil, não reserva de VRAM física).
 - Backend gráfico.
 - Áudio, rede e modo de mouse.
 - Tela cheia e desktop virtual.
