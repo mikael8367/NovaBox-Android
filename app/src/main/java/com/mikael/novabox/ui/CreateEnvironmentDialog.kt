@@ -73,7 +73,12 @@ fun CreateEnvironmentDialog(
     var virtualDesktop by rememberSaveable(key) { mutableStateOf(initialConfig?.virtualDesktop ?: true) }
     var audio by rememberSaveable(key) { mutableStateOf(initialConfig?.audio ?: AudioMode.AUTO) }
     var network by rememberSaveable(key) { mutableStateOf(initialConfig?.network ?: NetworkMode.NAT) }
-    var mouseMode by rememberSaveable(key) { mutableStateOf(initialConfig?.mouseMode ?: MouseMode.TOUCHPAD) }
+    var mouseMode by rememberSaveable(key) {
+        mutableStateOf(
+            initialConfig?.mouseMode
+                ?: if (family == OsFamily.ANDROID) MouseMode.DIRECT else MouseMode.TOUCHPAD
+        )
+    }
     var mouseSensitivity by rememberSaveable(key) { mutableStateOf(initialConfig?.mouseSensitivity ?: 5) }
     var vsync by rememberSaveable(key) { mutableStateOf(initialConfig?.vsync ?: true) }
     var dxvkEnabled by rememberSaveable(key) { mutableStateOf(initialConfig?.dxvkEnabled ?: false) }
@@ -156,7 +161,17 @@ fun CreateEnvironmentDialog(
                             Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
                                 .background(if (profile.id == selectedProfile.id) Color(0xFF203326) else NovaPanelRaised)
                                 .border(1.dp, if (profile.id == selectedProfile.id) Color(0xFF4F9F35) else NovaBorder, RoundedCornerShape(12.dp))
-                                .clickable { profileId = profile.id }.padding(10.dp),
+                                .clickable {
+                                    profileId = profile.id
+                                    if (family == OsFamily.ANDROID) {
+                                        architecture = when (profile.id) {
+                                            "android-x86" -> CpuArchitecture.X86
+                                            "android-x86-64" -> CpuArchitecture.X86_64
+                                            "bliss-os", "prime-os" -> CpuArchitecture.X86_64
+                                            else -> CpuArchitecture.ARM64
+                                        }
+                                    }
+                                }.padding(10.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -190,7 +205,7 @@ fun CreateEnvironmentDialog(
                 warning = selectedProfile.engine == EngineType.FULL_SYSTEM_VIRTUALIZATION || selectedProfile.engine == EngineType.UNSUPPORTED
             )
 
-            FormLabel("Arquitetura do programa")
+            FormLabel(if (family == OsFamily.ANDROID) "Arquitetura do Android convidado" else "Arquitetura do programa")
             ChoiceGrid(
                 options = CpuArchitecture.entries.map { it.label to it },
                 selected = architecture,
