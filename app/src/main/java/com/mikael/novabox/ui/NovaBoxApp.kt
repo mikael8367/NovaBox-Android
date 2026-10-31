@@ -637,7 +637,7 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
         Modifier.fillMaxSize().background(NovaBackground).statusBarsPadding()
             .padding(horizontal = 17.dp, vertical = 15.dp)
     ) {
-        PageHeader("Compatibilidade", "Motores", "12 componentes • estado verificado no armazenamento do app.")
+        PageHeader("Compatibilidade", "Motores", "13 componentes • estado verificado no armazenamento do app.")
         Spacer(Modifier.height(12.dp))
         InfoNotice(
             title = "Gerenciador de componentes",
@@ -647,6 +647,10 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
         Spacer(Modifier.height(10.dp))
         RuntimePackageInstallCard(
             runtimeEngine = runtimeEngine,
+            onInstallChanged = { refreshCounter += 1 }
+        )
+        Spacer(Modifier.height(10.dp))
+        LinuxRootfsInstallCard(
             onInstallChanged = { refreshCounter += 1 }
         )
         Spacer(Modifier.height(10.dp))
@@ -683,7 +687,7 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
                         }
                         Text(runtime.detail, color = NovaMuted, fontSize = 10.sp, lineHeight = 14.sp)
                         Text(status.message, color = tint, fontSize = 10.sp, lineHeight = 14.sp)
-                        if (com.mikael.novabox.runtime.RuntimePackageCatalog.packageFor(runtime) == null) {
+                        if (runtime != RuntimeId.LINUX_ROOTFS && com.mikael.novabox.runtime.RuntimePackageCatalog.packageFor(runtime) == null) {
                             Text(
                                 com.mikael.novabox.runtime.RuntimePackageCatalog.unavailableReason(runtime),
                                 color = NovaMuted,

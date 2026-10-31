@@ -52,7 +52,7 @@ O bundle Wine/Box64 e a camada de preparação do prefixo estão disponíveis. A
 
 ## Motores, instaladores e limitações atuais
 
-O catálogo reconhece Wine, Box64, Box86, PRoot, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências. Para binários executáveis nativos, a validação também lê o cabeçalho ELF e confere classe, endianness e arquitetura (ARM64, ARM32, x86 ou x86-64) com a ABI permitida pelo componente. Assim, um arquivo x86-64 não é aceito como executável ARM64 apenas por ter nome e permissão corretos. Essa checagem não prova compatibilidade com o linker/Bionic, dependências dinâmicas, SELinux ou capacidade de iniciar uma sessão.
+O catálogo reconhece Wine, Box64, Box86, PRoot, Alpine Linux ARM64, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip, DXVK e VKD3D-Proton. A aba **Motores** mostra o estado dos arquivos no armazenamento privado e distingue instalado, ausente, incompleto, incompatível e bloqueado por dependências. Para binários executáveis nativos, a validação também lê o cabeçalho ELF e confere classe, endianness e arquitetura (ARM64, ARM32, x86 ou x86-64) com a ABI permitida pelo componente. Assim, um arquivo x86-64 não é aceito como executável ARM64 apenas por ter nome e permissão corretos. Essa checagem não prova compatibilidade com o linker/Bionic, dependências dinâmicas, SELinux ou capacidade de iniciar uma sessão.
 
 ### Instalador verificado disponível
 
@@ -76,11 +76,11 @@ O bundle fornece a base real de Wine/Box64 e inicialização de prefixo; não si
 
 ### Motores ainda sem instalador
 
-PRoot, Box86, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip e VKD3D-Proton continuam no catálogo, mas ainda não têm instaladores Android/ARM64 completos e verificados neste projeto. Linux userland precisa de PRoot e rootfs compatível; Android virtual precisa de QEMU ARM64, firmware/kernel e uma imagem convidada inicializável. Pacotes Linux x86-64 não são tratados como binários Android instaláveis.
+O instalador de **Alpine Linux 3.24.3 ARM64** está disponível: baixa o minirootfs oficial, confere tamanho e SHA-256 fixados, extrai em staging com proteção contra path traversal e symlinks externos e ativa a instalação por troca atômica. O rootfs é apenas a base de arquivos; ainda falta instalar PRoot ARM64 e integrar o shell/terminal para iniciar o Linux. PRoot, Box86, DOSBox, QEMU, Mesa, VirGL, Zink, Turnip e VKD3D-Proton continuam sem instaladores completos e verificados neste projeto. Android virtual precisa de QEMU ARM64, firmware/kernel e uma imagem convidada inicializável. Pacotes Linux x86-64 não são tratados como binários Android instaláveis.
 
 Turnip é um driver Vulkan para GPUs Qualcomm Adreno. Ele não é adequado para GPUs PowerVR como a do Samsung Galaxy A12. DXVK, VKD3D-Proton e Zink também exigem Vulkan; a presença do componente no catálogo não garante compatibilidade com o aparelho.
 
-A seleção de perfil não baixa nem instala um sistema operacional. O bundle Wine/Box64 é a única base de runtime completa adicionada nesta etapa; Linux userland, DOS e Android virtual ainda não inicializam. A prévia visual de desktop continua sendo uma demonstração, não uma máquina virtual em execução.
+A seleção de perfil não baixa nem instala um sistema operacional automaticamente. O app oferece a instalação opcional do bundle Wine/Box64 e do rootfs Alpine ARM64; o primeiro ainda não tem sessão gráfica e o segundo ainda não inicializa sem PRoot. DOS e Android virtual continuam sem motores integrados. A prévia visual de desktop continua sendo uma demonstração, não uma máquina virtual em execução.
 
 ## Compilação e validação
 

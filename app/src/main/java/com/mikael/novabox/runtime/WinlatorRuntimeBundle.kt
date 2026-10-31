@@ -223,18 +223,21 @@ private object SafeZstdTarExtractor {
                     val relative = RuntimeArchivePathPolicy.safeEntryPath(entry.name) ?: throw IOException("Caminho inválido no pacote.")
                     if (relative.isEmpty()) continue
                     val output = root.resolve(relative).normalize()
-                    if (!output.startsWith(root)) throw IOException("Entrada fora da raiz do runtime.")
+                    ensureInsideRoot(root, output)
                     when {
                         entry.isDirectory -> Files.createDirectories(output)
                         entry.isSymbolicLink -> {
                             Files.createDirectories(output.parent)
+                            ensureInsideRoot(root, output.parent)
                             val link = RuntimeArchivePathPolicy.resolveLinkTarget(root, output.parent, entry.linkName)
+                            ensureInsideRoot(root, link)
                             Files.deleteIfExists(output)
                             Files.createSymbolicLink(output, output.parent.relativize(link))
                         }
                         entry.isLink -> {
                             val linkPath = RuntimeArchivePathPolicy.safeEntryPath(entry.linkName) ?: throw IOException("Hard link inválido.")
                             val source = root.resolve(linkPath).normalize()
+                            ensureInsideRoot(root, source)
                             if (!source.startsWith(root) || !Files.isRegularFile(source)) {
                                 throw IOException("Hard link aponta para arquivo inexistente.")
                             }
@@ -267,5 +270,10 @@ private object SafeZstdTarExtractor {
                 }
             }
         }
+    }
+
+    private fun ensureInsideRoot(root: Path, path: Path) {
+        val canonical = path.toFile().canonicalFile.toPath()
+        if (!canonical.startsWith(root)) throw IOException("Entrada tenta escapar da raiz do runtime.")
     }
 }

@@ -5,8 +5,9 @@ enum class RuntimeId(val title: String, val purpose: String, val detail: String)
     BOX64("Box64", "Tradução x86-64", "Executa programas Linux x86-64 em hosts ARM64 compatíveis."),
     BOX86("Box86", "Tradução x86", "Executa programas Linux x86 de 32 bits em hosts ARM compatíveis."),
     PROOT("PRoot", "Ambientes Linux", "Prepara ambientes Linux de usuário sem exigir root; não é uma máquina virtual completa."),
+    LINUX_ROOTFS("Alpine Linux ARM64", "Sistema de arquivos Linux", "Rootfs Alpine 3.24.3 ARM64; requer PRoot para inicializar o ambiente."),
     DOSBOX("DOSBox", "Compatibilidade DOS", "Emulação separada para software e jogos DOS."),
-    QEMU("QEMU", "Virtualização de sistema e Android convidado", "Necessário para Android virtual, BSD e outros sistemas completos; aceleração depende do suporte do aparelho. Ainda não integrado."),
+    QEMU("QEMU", "Virtualização/emulação de sistema", "Necessário para sistemas completos; aceleração depende do suporte do aparelho. Ainda não integrado."),
     MESA("Mesa", "Pilha gráfica", "Drivers e bibliotecas gráficas; suporte depende da GPU e do backend."),
     VIRGL("VirGL", "GPU virtual", "Renderização virtualizada para pilhas compatíveis."),
     ZINK("Zink", "OpenGL sobre Vulkan", "Camada OpenGL sobre Vulkan quando a pilha gráfica oferece suporte."),
@@ -21,7 +22,6 @@ object RuntimePlanner {
         return when (profile.engine) {
             EngineType.WINE_COMPATIBILITY -> buildList {
                 add(RuntimeId.WINE)
-                // The bundled Winlator Wine is an x86_64 guest binary on an ARM64 Android host.
                 add(RuntimeId.BOX64)
                 if (config.graphics == GraphicsProfile.VIRGL) add(RuntimeId.VIRGL)
                 if (config.graphics == GraphicsProfile.ZINK) add(RuntimeId.ZINK)
@@ -31,6 +31,7 @@ object RuntimePlanner {
             }
             EngineType.LINUX_USERLAND -> buildList {
                 add(RuntimeId.PROOT)
+                add(RuntimeId.LINUX_ROOTFS)
                 when (config.architecture) {
                     CpuArchitecture.X86_64 -> add(RuntimeId.BOX64)
                     CpuArchitecture.X86 -> add(RuntimeId.BOX86)
