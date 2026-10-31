@@ -25,6 +25,12 @@ class RuntimePackageCatalogTest {
         assertNotNull(spec)
         assertEquals("3.1.1", spec!!.version)
         assertEquals(18_041_512L, spec.expectedSizeBytes)
+        assertEquals(
+            "40565b4a724aadc4433fa4e010b4b23916d9b1f1baeee64e17186db94f54e608",
+            spec.sha256
+        )
+        assertEquals(8, spec.requiredArchiveFiles.size)
+        assertTrue(spec.allowedArchiveFiles.contains("LICENSE"))
         assertTrue(spec.allowedArchiveFiles.contains("x64/dxgi.dll"))
         assertTrue(spec.allowedArchiveFiles.contains("x32/d3d9.dll"))
     }
