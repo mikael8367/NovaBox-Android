@@ -133,7 +133,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled
         } catch (error: Exception) {
-            BundleInstallResult.Failed(error.message ?: "Falha ao instalar o runtime Wine/Box64.")
+            return BundleInstallResult.Failed(error.message ?: "Falha ao instalar o runtime Wine/Box64.")
         } finally {
             downloads.forEach { it.delete() }
             stage?.deleteRecursively()
