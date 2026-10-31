@@ -61,7 +61,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
 
     fun isInstalled(): Boolean {
         val marker = File(targetRoot, ".novabox-winlator-runtime")
-        return marker.isFile &&
+        return marker.isFile && marker.readText().contains(WinlatorRuntimeManifest.SOURCE_COMMIT) &&
             File(targetRoot, "usr/local/bin/box64").isFile &&
             File(targetRoot, "opt/wine/bin/wine").isFile &&
             File(targetRoot, "opt/wine/bin/wineboot").isFile
@@ -104,7 +104,7 @@ class WinlatorRuntimeBundleInstaller(context: Context) {
             )
             requiredFiles.forEach { relative ->
                 val file = File(stagingDirectory, relative).canonicalFile
-                if (!file.toPath().startsWith(stage.canonicalFile.toPath()) || !file.isFile || file.length() == 0L) {
+                if (!file.toPath().startsWith(stagingDirectory.canonicalFile.toPath()) || !file.isFile || file.length() == 0L) {
                     throw IOException("O pacote upstream não contém o arquivo obrigatório: $relative")
                 }
                 if (!file.setExecutable(true, true) && !file.canExecute()) {
@@ -214,7 +214,7 @@ private object SafeZstdTarExtractor {
                         entry.isSymbolicLink -> {
                             Files.createDirectories(output.parent)
                             val link = safeLinkTarget(root, output.parent, entry.linkName)
-                            if (Files.exists(output)) Files.delete(output)
+                            Files.deleteIfExists(output)
                             Files.createSymbolicLink(output, output.parent.relativize(link))
                         }
                         entry.isLink -> {
@@ -224,6 +224,7 @@ private object SafeZstdTarExtractor {
                                 throw IOException("Hard link aponta para arquivo inexistente.")
                             }
                             Files.createDirectories(output.parent)
+                            Files.deleteIfExists(output)
                             Files.copy(source, output)
                         }
                         entry.isFile -> {
@@ -253,7 +254,8 @@ private object SafeZstdTarExtractor {
     }
 
     private fun safeEntryPath(raw: String): String? {
-        val normalized = raw.replace('\\', '/').removePrefix("./")
+        var normalized = raw.replace('\\', '/').trimEnd('/')
+        while (normalized.startsWith("./")) normalized = normalized.removePrefix("./")
         if (normalized.isBlank() || normalized.startsWith("/") || Regex("^[A-Za-z]:").containsMatchIn(normalized)) return null
         val parts = normalized.split('/')
         if (parts.any { it == ".." || it.isBlank() }) return null

@@ -30,6 +30,8 @@ import com.mikael.novabox.runtime.RuntimeDownloadProgress
 import com.mikael.novabox.runtime.RuntimeInstallResult
 import com.mikael.novabox.runtime.RuntimePackageCatalog
 import com.mikael.novabox.runtime.RuntimePackageInstaller
+import com.mikael.novabox.runtime.WinlatorRuntimeBundleInstaller
+import com.mikael.novabox.runtime.BundleInstallResult
 import com.mikael.novabox.runtime.RuntimeEngine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -43,6 +45,8 @@ fun RuntimePackageInstallCard(
     val context = LocalContext.current
     val spec = remember { RuntimePackageCatalog.packageFor(RuntimeId.DXVK) }
     val installer = remember(context) { RuntimePackageInstaller(context) }
+    val winlatorInstaller = remember(context) { WinlatorRuntimeBundleInstaller(context) }
+    var winlatorInstalled by remember(context) { mutableStateOf(winlatorInstaller.isInstalled()) }
     val scope = rememberCoroutineScope()
 
     var isInstalling by remember { mutableStateOf(false) }
@@ -187,11 +191,65 @@ fun RuntimePackageInstallCard(
                         }
                     }
                 }
+                Text("Wine + Box64 0.4.4 • bundle Winlator", color = Color(0xFFF0F5F1), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Baixa rootfs Linux/glibc, patches, Box64 ARM64 e PulseAudio. São cerca de 74 MB compactados e até 1,7 GB livres necessários para extração e instalação.",
+                    color = Color(0xFFD0D8D1),
+                    fontSize = 10.sp,
+                    lineHeight = 15.sp
+                )
+                Text(
+                    "Os artefatos são fixados em um commit upstream e verificados por tamanho + Git blob SHA-1. A instalação não habilita automaticamente tela gráfica, Vulkan ou áudio.",
+                    color = Color(0xFFFFD27A),
+                    fontSize = 10.sp,
+                    lineHeight = 15.sp
+                )
+                Button(
+                    onClick = {
+                        statusMessage = null
+                        success = false
+                        isInstalling = true
+                        installJob = scope.launch {
+                            try {
+                                when (val result = winlatorInstaller.install { current ->
+                                    progress = RuntimeDownloadProgress(current.downloadedBytes, current.totalBytes)
+                                }) {
+                                    BundleInstallResult.Installed -> {
+                                        winlatorInstalled = true
+                                        success = true
+                                        statusMessage = "Bundle Wine/Box64 instalado e verificado. Prefixo e sessão gráfica ainda precisam ser inicializados."
+                                        onInstallChanged()
+                                    }
+                                    is BundleInstallResult.Failed -> {
+                                        statusMessage = result.reason
+                                    }
+                                }
+                            } catch (cancelled: CancellationException) {
+                                statusMessage = "Instalação cancelada; a pasta temporária foi descartada."
+                                throw cancelled
+                            } finally {
+                                isInstalling = false
+                                installJob = null
+                            }
+                        }
+                    },
+                    enabled = !isInstalling && !winlatorInstalled,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF78E08F),
+                        contentColor = Color(0xFF08110A),
+                        disabledContainerColor = Color(0xFF334238),
+                        disabledContentColor = Color(0xFF8A988D)
+                    )
+                ) {
+                    Text(if (winlatorInstalled) "Wine + Box64 instalados" else "Instalar Wine + Box64", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
             } else {
                 Text("Nenhum pacote com origem, arquitetura e SHA-256 validados.", color = Color(0xFFFFD27A), fontSize = 11.sp)
             }
             Text(
-                "Os outros 11 componentes aparecem no catálogo, mas ainda não possuem instaladores Android ARM64 verificados.",
+                "Os demais componentes gráficos, Linux userland, QEMU e Android virtual ainda exigem motores e imagens específicos; não são instalados por este bundle.",
                 color = Color(0xFFABB8AE),
                 fontSize = 9.sp,
                 lineHeight = 13.sp
