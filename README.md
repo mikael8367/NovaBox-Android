@@ -42,13 +42,13 @@ Na aba **Programas**, cada perfil Windows/Wine pode criar uma estrutura privada 
 
 O estado inicial é registrado como `WORKSPACE_ONLY` e `wineBootCompleted=false`. Depois que o bundle Wine/Box64 estiver instalado, a ação **Inicializar prefixo Wine** executa `wineboot --init`; somente quando o processo termina com código zero os metadados passam para `WINE_INITIALIZED`. A criação preserva um prefixo já inicializado, e a exclusão do ambiente também remove sua estrutura privada; se a limpeza falhar, o perfil é preservado.
 
-A inicialização do prefixo e a preparação do processo estão implementadas. A execução gráfica de programas ainda depende da integração de um backend real de display/XServer, entrada de mouse/teclado, áudio e ciclo de vida de processos, seguida de testes em aparelho.
+A inicialização do prefixo e a preparação do processo estão implementadas. Foi adicionada uma ponte opcional para detectar e abrir o aplicativo Termux:X11 (`com.termux.x11`), com consulta de visibilidade de pacote no manifesto. O usuário precisa instalar e iniciar o servidor X11 separadamente; abrir o aplicativo não garante que o display `:0` esteja ativo nem que Wine consiga desenhar nele. Ainda faltam a ligação do backend gráfico ao processo Wine, encaminhamento real de mouse/teclado, áudio e ciclo de vida de processos, seguida de testes em aparelho.
 
 ## Biblioteca de programas e diagnóstico
 
 A aba **Programas** permite importar arquivos `.exe`, `.msi` e `.com` para um ambiente. O app copia o conteúdo para o armazenamento privado, limita cada arquivo a 512 MiB, confere o tamanho informado pelo provedor e calcula SHA-256. Os arquivos podem ser removidos pela própria biblioteca. Cada item também oferece uma verificação manual de integridade: o NovaBox relê o conteúdo em fluxo, recalcula SHA-256 e compara com o hash registrado na importação. A leitura ocorre em segundo plano para não bloquear a interface. Nenhuma permissão ampla de armazenamento é solicitada.
 
-O bundle Wine/Box64 e a camada de preparação do prefixo estão disponíveis. A biblioteca ainda não oferece execução gráfica por botão: faltam o XServer/display Android, integração de entrada e áudio, clipboard e ciclo de vida completo da sessão. O cartão de diagnóstico nas configurações mostra modelo/Android, ABI, RAM, espaço livre, OpenGL ES e presença da feature Vulkan; o relatório pode ser copiado para suporte.
+O bundle Wine/Box64 e a camada de preparação do prefixo estão disponíveis. A aba Motores agora inclui um cartão de integração opcional com Termux:X11 para verificar e abrir o app externo. A biblioteca ainda não oferece execução gráfica funcional por botão: o XServer não é embutido nem iniciado automaticamente, e faltam o canal gráfico conectado ao Wine, integração real de entrada e áudio, clipboard e ciclo de vida completo da sessão. O cartão de diagnóstico nas configurações mostra modelo/Android, ABI, RAM, espaço livre, OpenGL ES e presença da feature Vulkan; o relatório pode ser copiado para suporte.
 
 ## Motores, instaladores e limitações atuais
 
