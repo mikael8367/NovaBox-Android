@@ -3,6 +3,7 @@ package com.mikael.novabox.data
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import java.io.File
 import org.junit.Test
 
 class ProgramFilePolicyTest {
@@ -27,6 +28,23 @@ class ProgramFilePolicyTest {
         assertFalse(ProgramFilePolicy.isSafeId("../abc"))
         assertFalse(ProgramFilePolicy.isSafeId(""))
         assertFalse(ProgramFilePolicy.isSafeId("id with spaces"))
+    }
+
+    @Test
+    fun computesSha256AndDetectsChangedProgramContents() {
+        val file = File.createTempFile("novabox-program-hash", ".bin")
+        try {
+            file.writeText("original")
+            val originalHash = ProgramFilePolicy.sha256(file)
+            assertEquals(
+                "068c9e1e4c8e7f9f3e5b7b4a2f4f9f7f",
+                originalHash.take(32)
+            )
+            file.writeText("modified")
+            assertFalse(originalHash == ProgramFilePolicy.sha256(file))
+        } finally {
+            file.delete()
+        }
     }
 
     @Test
