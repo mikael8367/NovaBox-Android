@@ -187,18 +187,37 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                     Canvas(Modifier.fillMaxSize()) {
                         val x = size.width * cursorX
                         val y = size.height * cursorY
-                        val pointer = Path().apply {
-                            moveTo(x, y)
-                            lineTo(x, y + 25f)
-                            lineTo(x + 6f, y + 19f)
-                            lineTo(x + 11f, y + 30f)
-                            lineTo(x + 15f, y + 28f)
-                            lineTo(x + 10f, y + 17f)
-                            lineTo(x + 19f, y + 17f)
-                            close()
+                        if (config.profile?.family == com.mikael.novabox.model.OsFamily.ANDROID) {
+                            drawCircle(
+                                color = Color.White.copy(alpha = 0.25f),
+                                radius = 22f,
+                                center = Offset(x, y)
+                            )
+                            drawCircle(
+                                color = NovaGreen,
+                                radius = 8f,
+                                center = Offset(x, y)
+                            )
+                            drawCircle(
+                                color = Color.White,
+                                radius = 8f,
+                                center = Offset(x, y),
+                                style = Stroke(width = 2f)
+                            )
+                        } else {
+                            val pointer = Path().apply {
+                                moveTo(x, y)
+                                lineTo(x, y + 25f)
+                                lineTo(x + 6f, y + 19f)
+                                lineTo(x + 11f, y + 30f)
+                                lineTo(x + 15f, y + 28f)
+                                lineTo(x + 10f, y + 17f)
+                                lineTo(x + 19f, y + 17f)
+                                close()
+                            }
+                            drawPath(pointer, Color.White)
+                            drawPath(pointer, Color.Black, style = Stroke(width = 2f))
                         }
-                        drawPath(pointer, Color.White)
-                        drawPath(pointer, Color.Black, style = Stroke(width = 2f))
                     }
                 }
             }
