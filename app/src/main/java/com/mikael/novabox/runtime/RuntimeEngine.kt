@@ -73,16 +73,27 @@ class RuntimeEngine(private val context: Context) {
             }
         }
 
-        val state = when {
+        val filesState = when {
             groupResults.all { it } -> RuntimeComponentState.INSTALLED
             groupResults.any { it } -> RuntimeComponentState.INCOMPLETE
             else -> RuntimeComponentState.NOT_INSTALLED
         }
+        val missingDependencies = if (filesState == RuntimeComponentState.INSTALLED) {
+            definition.dependencies.filterNot(::isComponentInstalled)
+        } else {
+            emptyList()
+        }
+        val state = if (missingDependencies.isNotEmpty()) {
+            RuntimeComponentState.BLOCKED
+        } else {
+            filesState
+        }
         val message = when (state) {
-            RuntimeComponentState.INSTALLED -> "Arquivos principais encontrados e validados."
+            RuntimeComponentState.INSTALLED -> "Arquivos principais e dependências encontrados."
             RuntimeComponentState.INCOMPLETE -> "Instalação incompleta: faltam arquivos obrigatórios."
             RuntimeComponentState.NOT_INSTALLED -> "Componente não instalado neste ambiente."
             RuntimeComponentState.UNSUPPORTED_DEVICE -> incompatibility.orEmpty()
+            RuntimeComponentState.BLOCKED -> "Dependências ausentes: " + missingDependencies.joinToString { it.title }
         }
         return RuntimeComponentStatus(id, state, message, definition.dependencies)
     }
