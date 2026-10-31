@@ -26,22 +26,24 @@ class ElfAbiValidatorTest {
     @Test
     fun rejectsNonElfAndBigEndianFiles() {
         assertFalse(ElfAbiValidator.isCompatible(fileWith(ByteArray(32)), setOf("arm64-v8a")))
-        val bigEndian = binary(elfClass = 2, machine = 183).apply { write(2, 2) }
-        assertFalse(ElfAbiValidator.isCompatible(bigEndian, setOf("arm64-v8a")))
+        val bigEndianHeader = binaryHeader(elfClass = 2, machine = 183).apply { this[5] = 2 }
+        assertFalse(ElfAbiValidator.isCompatible(fileWith(bigEndianHeader), setOf("arm64-v8a")))
     }
 
-    private fun binary(elfClass: Int, machine: Int): File {
-        val header = ByteArray(32)
-        header[0] = 0x7f
-        header[1] = 'E'.code.toByte()
-        header[2] = 'L'.code.toByte()
-        header[3] = 'F'.code.toByte()
-        header[4] = elfClass.toByte()
-        header[5] = 1
-        header[18] = (machine and 0xff).toByte()
-        header[19] = ((machine shr 8) and 0xff).toByte()
-        return fileWith(header)
-    }
+    private fun binary(elfClass: Int, machine: Int): File =
+        fileWith(binaryHeader(elfClass, machine))
+
+    private fun binaryHeader(elfClass: Int, machine: Int): ByteArray =
+        ByteArray(32).apply {
+            this[0] = 0x7f
+            this[1] = 'E'.code.toByte()
+            this[2] = 'L'.code.toByte()
+            this[3] = 'F'.code.toByte()
+            this[4] = elfClass.toByte()
+            this[5] = 1
+            this[18] = (machine and 0xff).toByte()
+            this[19] = ((machine shr 8) and 0xff).toByte()
+        }
 
     private fun fileWith(bytes: ByteArray): File =
         File.createTempFile("novabox-elf-test", ".bin").apply {
