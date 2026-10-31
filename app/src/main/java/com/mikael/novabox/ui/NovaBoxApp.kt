@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.DesktopWindows
@@ -399,7 +400,11 @@ private fun ContainerCard(
 ) {
     val profile = config.profile
     val availability = runtimeEngine.inspect(config)
-    val familyColor = if (profile?.family == OsFamily.LINUX) Color(0xFF85C7FF) else NovaGreen
+    val familyColor = when (profile?.family) {
+        OsFamily.LINUX, OsFamily.BSD -> Color(0xFF85C7FF)
+        OsFamily.ANDROID -> Color(0xFF9BFF62)
+        else -> NovaGreen
+    }
     Surface(
         modifier = Modifier.fillMaxWidth().border(1.dp, NovaBorder, RoundedCornerShape(18.dp)),
         color = NovaPanel,
@@ -412,7 +417,11 @@ private fun ContainerCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        if (profile?.family == OsFamily.LINUX || profile?.family == OsFamily.BSD) Icons.Default.Terminal else Icons.Default.DesktopWindows,
+                        when (profile?.family) {
+                            OsFamily.LINUX, OsFamily.BSD -> Icons.Default.Terminal
+                            OsFamily.ANDROID -> Icons.Default.Android
+                            else -> Icons.Default.DesktopWindows
+                        },
                         contentDescription = null,
                         tint = familyColor
                     )
