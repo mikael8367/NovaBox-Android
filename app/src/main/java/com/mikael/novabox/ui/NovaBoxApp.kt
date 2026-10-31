@@ -504,6 +504,7 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
                     com.mikael.novabox.runtime.RuntimeComponentState.NOT_INSTALLED -> "Não instalado" to NovaWarning
                     com.mikael.novabox.runtime.RuntimeComponentState.INCOMPLETE -> "Incompleto" to NovaWarning
                     com.mikael.novabox.runtime.RuntimeComponentState.UNSUPPORTED_DEVICE -> "Incompatível" to Color(0xFFFF7777)
+                    com.mikael.novabox.runtime.RuntimeComponentState.BLOCKED -> "Bloqueado" to NovaWarning
                 }
                 Surface(
                     color = NovaPanel,
