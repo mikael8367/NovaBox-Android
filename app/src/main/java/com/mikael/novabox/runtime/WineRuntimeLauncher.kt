@@ -14,6 +14,15 @@ object WineCommandBuilder {
         require(guestArguments.isNotEmpty() && guestArguments.none { it.isBlank() }) { "Argumentos do Wine vazios." }
         return listOf(box64Executable, wineExecutable) + guestArguments
     }
+
+    fun programArguments(displayName: String, storedPath: String): List<String> {
+        require(displayName.isNotBlank() && storedPath.isNotBlank()) { "Programa inválido." }
+        return when (displayName.substringAfterLast('.', "").lowercase(java.util.Locale.ROOT)) {
+            "msi" -> listOf("msiexec", "/i", storedPath)
+            "exe", "com" -> listOf(storedPath)
+            else -> throw IllegalArgumentException("Formato de programa não suportado.")
+        }
+    }
 }
 
 /** Environment parity with Winlator's guest launcher, while keeping each prefix isolated. */
@@ -83,7 +92,12 @@ class WineRuntimeLauncher(context: Context) {
         if (WineWorkspaceManager(appContext).inspect(config).state != WineWorkspaceState.WINE_INITIALIZED) {
             throw IOException("Inicialize o prefixo Wine antes de executar programas.")
         }
-        return start(config, workspace, listOf(stored.absolutePath))
+        val guestArguments = try {
+            WineCommandBuilder.programArguments(entry.displayName, stored.absolutePath)
+        } catch (error: IllegalArgumentException) {
+            throw IOException(error.message ?: "Formato de programa inválido.", error)
+        }
+        return start(config, workspace, guestArguments)
     }
 
     private fun validateWorkspace(config: ContainerConfig): File {

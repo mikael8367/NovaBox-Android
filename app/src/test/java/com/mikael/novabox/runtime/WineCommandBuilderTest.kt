@@ -8,6 +8,30 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WineCommandBuilderTest {
+    @Test fun launchesMsiThroughWineMsiexec() {
+        assertEquals(
+            listOf("msiexec", "/i", "/private/installer.msi"),
+            WineCommandBuilder.programArguments("installer.msi", "/private/installer.msi")
+        )
+    }
+
+    @Test fun launchesExeAndComAsDirectWineTargets() {
+        assertEquals(
+            listOf("/private/app.exe"),
+            WineCommandBuilder.programArguments("app.exe", "/private/app.exe")
+        )
+        assertEquals(
+            listOf("/private/tool.com"),
+            WineCommandBuilder.programArguments("tool.com", "/private/tool.com")
+        )
+    }
+
+    @Test fun rejectsUnknownProgramExtensions() {
+        assertThrows(IllegalArgumentException::class.java) {
+            WineCommandBuilder.programArguments("archive.zip", "/private/archive.zip")
+        }
+    }
+
     @Test fun buildsHostBox64ThenGuestWineCommand() {
         val command = WineCommandBuilder.build("/data/app/files/rootfs/usr/local/bin/box64",
             "/data/app/files/rootfs/opt/wine/bin/wine", listOf("/data/app/files/programs/42/setup.program"))
