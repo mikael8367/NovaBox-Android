@@ -2,6 +2,7 @@ package com.mikael.novabox.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -59,13 +60,14 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
     }
 
     Column(
-        Modifier.fillMaxSize().background(NovaBackground).padding(12.dp),
+        Modifier.fillMaxSize().background(NovaBackground)
+            .statusBarsPadding().navigationBarsPadding().padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(38.dp).clip(CircleShape).background(NovaPanelRaised)
-                    .pointerInput(Unit) { detectTapGestures(onTap = { onBack() }) },
+                    .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = NovaText)
@@ -104,7 +106,11 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
                             }
                             inputBridge.click(MouseButton.LEFT)
                         },
-                        onLongPress = {
+                        onLongPress = { offset ->
+                            if (canvasSize.width > 0 && canvasSize.height > 0) {
+                                cursorX = (offset.x / canvasSize.width).coerceIn(0f, 1f)
+                                cursorY = (offset.y / canvasSize.height).coerceIn(0f, 1f)
+                            }
                             inputBridge.click(MouseButton.RIGHT)
                         }
                     )
@@ -203,7 +209,7 @@ fun DesktopPreviewScreen(config: ContainerConfig, onBack: () -> Unit) {
 private fun ControlButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier.clip(RoundedCornerShape(12.dp)).background(NovaPanelRaised)
-            .pointerInput(Unit) { detectTapGestures(onTap = { onClick() }) }
+            .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
