@@ -484,6 +484,10 @@ private fun ContainerCard(
 
 @Composable
 private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
+    var refreshCounter by remember { mutableStateOf(0) }
+    val statusRows = remember(runtimeEngine, refreshCounter) {
+        RuntimeId.entries.map { id -> id to runtimeEngine.componentStatus(id) }
+    }
     Column(
         Modifier.fillMaxSize().background(NovaBackground).statusBarsPadding()
             .padding(horizontal = 17.dp, vertical = 15.dp)
@@ -492,13 +496,20 @@ private fun RuntimesScreen(runtimeEngine: RuntimeEngine) {
         Spacer(Modifier.height(12.dp))
         InfoNotice(
             title = "Gerenciador de componentes",
-            body = "O NovaBox agora verifica arquivos reais, permissões de execução e requisitos do aparelho. Um marcador vazio não conta como instalação. Os instaladores de pacotes nativos ainda precisam ser publicados e validados antes de liberar downloads.",
+            body = "O NovaBox verifica arquivos reais, permissões de execução, dependências e compatibilidade. Só pacotes com origem e SHA-256 validados recebem botão de instalação.",
             warning = true
         )
-        Spacer(Modifier.height(12.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            items(RuntimeId.entries.toList(), key = { it.name }) { runtime ->
-                val status = runtimeEngine.componentStatus(runtime)
+        Spacer(Modifier.height(10.dp))
+        RuntimePackageInstallCard(
+            runtimeEngine = runtimeEngine,
+            onInstallChanged = { refreshCounter += 1 }
+        )
+        Spacer(Modifier.height(10.dp))
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            items(statusRows, key = { it.first.name }) { (runtime, status) ->
                 val (label, tint) = when (status.state) {
                     com.mikael.novabox.runtime.RuntimeComponentState.INSTALLED -> "Instalado" to NovaGreen
                     com.mikael.novabox.runtime.RuntimeComponentState.NOT_INSTALLED -> "Não instalado" to NovaWarning
