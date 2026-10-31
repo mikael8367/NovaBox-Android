@@ -1,5 +1,6 @@
 package com.mikael.novabox.runtime
 
+import com.mikael.novabox.model.ContainerConfig
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
