@@ -206,6 +206,26 @@ fun CreateEnvironmentDialog(
                 warning = selectedProfile.engine == EngineType.FULL_SYSTEM_VIRTUALIZATION || selectedProfile.engine == EngineType.UNSUPPORTED
             )
 
+            if (family == OsFamily.WINDOWS || family == OsFamily.ANDROID) {
+                FormLabel("Conexão com a Internet")
+                ChoiceGrid(
+                    NetworkMode.entries.map { it.label to it },
+                    network,
+                    onSelect = { network = it }
+                )
+                InfoNotice(
+                    title = if (network == NetworkMode.NAT) "Internet compartilhada ativada" else "Internet desativada",
+                    body = if (network == NetworkMode.NAT && family == OsFamily.WINDOWS) {
+                        "O ambiente Windows via Wine deverá usar a conexão de rede do Android. Isso depende do runtime Wine estar integrado e funcionando."
+                    } else if (network == NetworkMode.NAT) {
+                        "O Android convidado usará NAT/encaminhamento pela conexão do celular quando o QEMU com rede virtual estiver integrado."
+                    } else {
+                        "Este ambiente ficará configurado sem acesso à rede."
+                    },
+                    warning = network == NetworkMode.NAT && family == OsFamily.ANDROID
+                )
+            }
+
             FormLabel(if (family == OsFamily.ANDROID) "Arquitetura do Android convidado" else "Arquitetura do programa")
             ChoiceGrid(
                 options = CpuArchitecture.entries.map { it.label to it },
@@ -283,7 +303,7 @@ fun CreateEnvironmentDialog(
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("Configurações avançadas", color = NovaText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("Áudio, rede, mouse, DXVK, Wine e variáveis", color = NovaMuted, fontSize = 10.sp)
+                    Text("Áudio, mouse, DXVK, Wine e variáveis", color = NovaMuted, fontSize = 10.sp)
                 }
                 Icon(if (advanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null, tint = NovaGreen)
             }
@@ -292,8 +312,10 @@ fun CreateEnvironmentDialog(
                 FormLabel("Áudio")
                 ChoiceGrid(AudioMode.entries.map { it.label to it }, audio, onSelect = { audio = it })
 
-                FormLabel("Rede")
-                ChoiceGrid(NetworkMode.entries.map { it.label to it }, network, onSelect = { network = it })
+                if (family != OsFamily.WINDOWS && family != OsFamily.ANDROID) {
+                    FormLabel("Rede")
+                    ChoiceGrid(NetworkMode.entries.map { it.label to it }, network, onSelect = { network = it })
+                }
 
                 FormLabel(if (family == OsFamily.ANDROID) "Controle de toque do Android convidado" else "Controle do mouse")
                 ChoiceGrid(MouseMode.entries.map { it.label to it }, mouseMode, onSelect = { mouseMode = it })
