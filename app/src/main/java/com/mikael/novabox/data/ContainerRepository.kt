@@ -3,9 +3,13 @@ package com.mikael.novabox.data
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
+import com.mikael.novabox.model.AudioMode
 import com.mikael.novabox.model.ContainerConfig
 import com.mikael.novabox.model.CpuArchitecture
 import com.mikael.novabox.model.GraphicsProfile
+import com.mikael.novabox.model.MouseMode
+import com.mikael.novabox.model.NetworkMode
+import com.mikael.novabox.model.WinePreset
 
 class ContainerRepository(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(
@@ -22,13 +26,31 @@ class ContainerRepository(context: Context) {
                     val item = array.optJSONObject(index) ?: continue
                     val config = runCatching {
                         ContainerConfig(
-                            id = item.getString("id"),
+                            id = item.optString("id").ifBlank { java.util.UUID.randomUUID().toString() },
                             name = item.getString("name"),
                             osProfileId = item.getString("osProfileId"),
-                            architecture = CpuArchitecture.valueOf(item.optString("architecture", CpuArchitecture.X86_64.name)),
-                            graphics = GraphicsProfile.valueOf(item.optString("graphics", GraphicsProfile.AUTO.name)),
+                            architecture = enumOrDefault(item.optString("architecture"), CpuArchitecture.X86_64),
+                            graphics = enumOrDefault(item.optString("graphics"), GraphicsProfile.AUTO),
                             resolution = item.optString("resolution", "1280x720"),
-                            ramMb = item.optInt("ramMb", 1024)
+                            ramMb = item.optInt("ramMb", 1024),
+                            cpuCores = item.optInt("cpuCores", 2),
+                            diskGb = item.optInt("diskGb", 8),
+                            dpi = item.optInt("dpi", 120),
+                            fullscreen = item.optBoolean("fullscreen", true),
+                            virtualDesktop = item.optBoolean("virtualDesktop", true),
+                            audio = enumOrDefault(item.optString("audio"), AudioMode.AUTO),
+                            network = enumOrDefault(item.optString("network"), NetworkMode.NAT),
+                            mouseMode = enumOrDefault(item.optString("mouseMode"), MouseMode.TOUCHPAD),
+                            vsync = item.optBoolean("vsync", true),
+                            dxvkEnabled = item.optBoolean("dxvkEnabled", false),
+                            vkd3dEnabled = item.optBoolean("vkd3dEnabled", false),
+                            esyncEnabled = item.optBoolean("esyncEnabled", true),
+                            fsyncEnabled = item.optBoolean("fsyncEnabled", false),
+                            wow64Enabled = item.optBoolean("wow64Enabled", true),
+                            winePreset = enumOrDefault(item.optString("winePreset"), WinePreset.STABLE),
+                            locale = item.optString("locale", "pt_BR"),
+                            environmentVariables = item.optString("environmentVariables", ""),
+                            sharedFolderPath = item.optString("sharedFolderPath", "")
                         )
                     }.getOrNull()
                     if (config != null && config.validate() == null) add(config)
@@ -39,7 +61,7 @@ class ContainerRepository(context: Context) {
 
     fun save(containers: List<ContainerConfig>) {
         val array = JSONArray()
-        containers.forEach { config ->
+        containers.filter { it.validate() == null }.forEach { config ->
             array.put(
                 JSONObject()
                     .put("id", config.id)
@@ -49,9 +71,31 @@ class ContainerRepository(context: Context) {
                     .put("graphics", config.graphics.name)
                     .put("resolution", config.resolution)
                     .put("ramMb", config.ramMb)
+                    .put("cpuCores", config.cpuCores)
+                    .put("diskGb", config.diskGb)
+                    .put("dpi", config.dpi)
+                    .put("fullscreen", config.fullscreen)
+                    .put("virtualDesktop", config.virtualDesktop)
+                    .put("audio", config.audio.name)
+                    .put("network", config.network.name)
+                    .put("mouseMode", config.mouseMode.name)
+                    .put("vsync", config.vsync)
+                    .put("dxvkEnabled", config.dxvkEnabled)
+                    .put("vkd3dEnabled", config.vkd3dEnabled)
+                    .put("esyncEnabled", config.esyncEnabled)
+                    .put("fsyncEnabled", config.fsyncEnabled)
+                    .put("wow64Enabled", config.wow64Enabled)
+                    .put("winePreset", config.winePreset.name)
+                    .put("locale", config.locale)
+                    .put("environmentVariables", config.environmentVariables)
+                    .put("sharedFolderPath", config.sharedFolderPath)
             )
         }
         preferences.edit().putString(KEY_CONTAINERS, array.toString()).apply()
+    }
+
+    private inline fun <reified T : Enum<T>> enumOrDefault(value: String, default: T): T {
+        return runCatching { enumValueOf<T>(value) }.getOrDefault(default)
     }
 
     companion object {
