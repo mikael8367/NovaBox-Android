@@ -205,7 +205,7 @@ private object SafeZstdTarExtractor {
             TarArchiveInputStream(zstd).use { tar ->
                 while (true) {
                     val entry = tar.nextTarEntry ?: break
-                    val relative = safeEntryPath(entry.name) ?: throw IOException("Caminho inválido no pacote.")
+                    val relative = RuntimeArchivePathPolicy.safeEntryPath(entry.name) ?: throw IOException("Caminho inválido no pacote.")
                     if (relative.isEmpty()) continue
                     val output = root.resolve(relative).normalize()
                     if (!output.startsWith(root)) throw IOException("Entrada fora da raiz do runtime.")
@@ -213,12 +213,12 @@ private object SafeZstdTarExtractor {
                         entry.isDirectory -> Files.createDirectories(output)
                         entry.isSymbolicLink -> {
                             Files.createDirectories(output.parent)
-                            val link = safeLinkTarget(root, output.parent, entry.linkName)
+                            val link = RuntimeArchivePathPolicy.resolveLinkTarget(root, output.parent, entry.linkName)
                             Files.deleteIfExists(output)
                             Files.createSymbolicLink(output, output.parent.relativize(link))
                         }
                         entry.isLink -> {
-                            val linkPath = safeEntryPath(entry.linkName) ?: throw IOException("Hard link inválido.")
+                            val linkPath = RuntimeArchivePathPolicy.safeEntryPath(entry.linkName) ?: throw IOException("Hard link inválido.")
                             val source = root.resolve(linkPath).normalize()
                             if (!source.startsWith(root) || !Files.isRegularFile(source)) {
                                 throw IOException("Hard link aponta para arquivo inexistente.")
@@ -251,22 +251,5 @@ private object SafeZstdTarExtractor {
                 }
             }
         }
-    }
-
-    private fun safeEntryPath(raw: String): String? {
-        var normalized = raw.replace('\\', '/').trimEnd('/')
-        while (normalized.startsWith("./")) normalized = normalized.removePrefix("./")
-        if (normalized.isBlank() || normalized.startsWith("/") || Regex("^[A-Za-z]:").containsMatchIn(normalized)) return null
-        val parts = normalized.split('/')
-        if (parts.any { it == ".." || it.isBlank() }) return null
-        return parts.filter { it != "." }.joinToString("/")
-    }
-
-    private fun safeLinkTarget(root: Path, parent: Path, raw: String): Path {
-        if (raw.isBlank() || raw.contains('\\')) throw IOException("Link simbólico inválido.")
-        val resolved = if (raw.startsWith("/")) root.resolve(raw.removePrefix("/")).normalize()
-            else parent.resolve(raw).normalize()
-        if (!resolved.startsWith(root)) throw IOException("Link simbólico tenta sair da raiz.")
-        return resolved
     }
 }
