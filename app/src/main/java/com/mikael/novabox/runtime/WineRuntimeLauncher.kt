@@ -48,6 +48,8 @@ object WineEnvironmentBuilder {
             "BOX64_UNITYPLAYER" to "0",
             "BOX64_NOBANNER" to "1",
             "WINEDEBUG" to "-all",
+            // Termux socat forwards this loopback-only X11 endpoint to Termux:X11 display :1.
+            "DISPLAY" to XServerCommand.WINE_DISPLAY,
         )
         if (config.esyncEnabled) env["WINEESYNC"] = "1"
         if (config.fsyncEnabled) env["WINEFSYNC"] = "1"

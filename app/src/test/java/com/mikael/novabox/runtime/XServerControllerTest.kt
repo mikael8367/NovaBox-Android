@@ -2,6 +2,8 @@ package com.mikael.novabox.runtime
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class XServerControllerTest {
@@ -19,12 +21,23 @@ class XServerControllerTest {
         assertArrayEquals(arrayOf(":1"), XServerCommand.arguments())
     }
 
+    @Test fun bridgeIsRestrictedToLoopbackAndUsesDisplayOneSocket() {
+        val script = XServerCommand.bridgeScript()
+        assertTrue(script.contains("TCP-LISTEN:6001,bind=127.0.0.1,reuseaddr,fork"))
+        assertTrue(script.contains("UNIX-CONNECT:\"\$TMPDIR/.X11-unix/X1\""))
+        assertTrue(script.contains("pkg install -y socat"))
+        assertFalse(script.contains("bind=0.0.0.0"))
+        assertEquals("\$PREFIX/bin/sh", XServerCommand.SHELL_PATH)
+        assertArrayEquals(arrayOf("-lc", script), XServerCommand.bridgeArguments())
+        assertEquals("127.0.0.1:1", XServerCommand.WINE_DISPLAY)
+    }
+
     @Test fun exposesAllLaunchOutcomes() {
         assertEquals(
             listOf(
                 "OPENED", "NOT_INSTALLED", "NO_LAUNCH_ACTIVITY", "FAILED",
                 "TERMUX_NOT_INSTALLED", "PERMISSION_REQUIRED", "SERVICE_START_FAILED",
-                "START_REQUESTED", "DISPLAY_COMMAND_SENT"
+                "START_REQUESTED", "DISPLAY_COMMAND_SENT", "BRIDGE_REQUESTED"
             ),
             XServerLaunchResult.values().map { it.name }
         )

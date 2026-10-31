@@ -113,3 +113,10 @@ Imported EXE/MSI/COM entries now have an explicit process-launch action wired to
 O cartão de servidor gráfico pode solicitar o início do display `:1` através do serviço oficial `com.termux.app.RunCommandService` do Termux e abrir o aplicativo Termux:X11. Para isso, Termux e Termux:X11 devem estar instalados, o usuário deve conceder a permissão Android `com.termux.permission.RUN_COMMAND` ao NovaBox e habilitar `allow-external-apps=true` em `~/.termux/termux.properties` no Termux. O app não altera essa configuração automaticamente.
 
 O resultado `START_REQUESTED` significa apenas que o serviço aceitou o pedido e a Activity externa foi aberta; não é uma confirmação de que o servidor está pronto. Esta etapa ainda não encaminha o socket X11 para o processo Wine isolado no sandbox do NovaBox. O transporte gráfico, autenticação X11 e integração de entrada/áudio continuam pendentes e não são anunciados como funcionais.
+
+
+### Ponte X11 local para Wine (experimental)
+
+O cartão de servidor gráfico agora oferece uma segunda etapa: iniciar uma ponte TCP/Unix com `socat` dentro do Termux. O comando instala `socat` quando necessário, aguarda até 45 segundos pelo socket `$TMPDIR/.X11-unix/X1` e cria um listener em `127.0.0.1:6001`, encaminhando conexões para o display X11 `:1`. O listener é limitado ao loopback do aparelho e não é exposto à rede local. O ambiente Wine passa a receber `DISPLAY=127.0.0.1:1`.
+
+Ordem de uso: iniciar Termux:X11/display :1, aguardar a tela ficar pronta e então iniciar a ponte local. Ambos os comandos dependem do serviço RUN_COMMAND e da configuração `allow-external-apps=true`. A solicitação de início não verifica o processo `socat`, autenticação X11, conexão real ou renderização. Se o servidor exigir Xauthority, será necessário configurar a autorização de forma segura; o NovaBox não desativa o controle de acesso do X11. A ponte é experimental e precisa ser validada no aparelho antes de afirmar que janelas Wine aparecem.
