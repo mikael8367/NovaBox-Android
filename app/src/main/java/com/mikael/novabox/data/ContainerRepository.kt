@@ -4,6 +4,7 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import com.mikael.novabox.model.AudioMode
+import com.mikael.novabox.model.Box64Preset
 import com.mikael.novabox.model.ContainerConfig
 import com.mikael.novabox.model.CpuArchitecture
 import com.mikael.novabox.model.GraphicsProfile
@@ -48,6 +49,9 @@ class ContainerRepository(context: Context) {
                             fsyncEnabled = item.optBoolean("fsyncEnabled", false),
                             wow64Enabled = item.optBoolean("wow64Enabled", true),
                             winePreset = enumOrDefault(item.optString("winePreset"), WinePreset.STABLE),
+                            box64Preset = enumOrDefault(item.optString("box64Preset"), Box64Preset.BALANCED),
+                            graphicsMemoryMb = item.optInt("graphicsMemoryMb", 512),
+                            fpsLimit = item.optInt("fpsLimit", 60),
                             locale = item.optString("locale", "pt_BR"),
                             environmentVariables = item.optString("environmentVariables", ""),
                             sharedFolderPath = item.optString("sharedFolderPath", "")
@@ -86,6 +90,9 @@ class ContainerRepository(context: Context) {
                     .put("fsyncEnabled", config.fsyncEnabled)
                     .put("wow64Enabled", config.wow64Enabled)
                     .put("winePreset", config.winePreset.name)
+                    .put("box64Preset", config.box64Preset.name)
+                    .put("graphicsMemoryMb", config.graphicsMemoryMb)
+                    .put("fpsLimit", config.fpsLimit)
                     .put("locale", config.locale)
                     .put("environmentVariables", config.environmentVariables)
                     .put("sharedFolderPath", config.sharedFolderPath)
