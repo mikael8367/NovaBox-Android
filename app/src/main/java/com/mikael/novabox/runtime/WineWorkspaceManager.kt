@@ -7,6 +7,14 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 
+object WineWorkspacePolicy {
+    fun isSafeEnvironmentId(value: String): Boolean =
+        value.matches(Regex("^[A-Za-z0-9_-]{1,80}$"))
+
+    fun isWindowsWineProfile(config: ContainerConfig): Boolean =
+        config.validate() == null && config.profile?.engine == EngineType.WINE_COMPATIBILITY
+}
+
 enum class WineWorkspaceState {
     NOT_PREPARED,
     WORKSPACE_PREPARED,
@@ -23,13 +31,13 @@ class WineWorkspaceManager(context: Context) {
     private val root = File(context.applicationContext.filesDir, "wine-workspaces")
 
     fun prepare(config: ContainerConfig): WineWorkspaceStatus {
-        if (config.validate() != null || config.profile?.engine != EngineType.WINE_COMPATIBILITY) {
+        if (!WineWorkspacePolicy.isWindowsWineProfile(config)) {
             return WineWorkspaceStatus(
                 WineWorkspaceState.INVALID,
                 "Este perfil não é um ambiente Windows/Wine válido."
             )
         }
-        if (!SAFE_ID.matches(config.id)) {
+        if (!WineWorkspacePolicy.isSafeEnvironmentId(config.id)) {
             return WineWorkspaceStatus(WineWorkspaceState.INVALID, "Identificador do ambiente inválido.")
         }
 
@@ -75,9 +83,6 @@ class WineWorkspaceManager(context: Context) {
             val metadataFile = File(workspace, "workspace.json")
             val temporary = File(workspace, ".workspace.json.tmp")
             temporary.writeText(metadata.toString(2), Charsets.UTF_8)
-            if (metadataFile.exists() && !metadataFile.delete()) {
-                throw IOException("Não foi possível atualizar os metadados do ambiente.")
-            }
             if (!temporary.renameTo(metadataFile)) {
                 temporary.delete()
                 throw IOException("Não foi possível salvar os metadados do ambiente.")
@@ -97,7 +102,7 @@ class WineWorkspaceManager(context: Context) {
     }
 
     fun delete(configId: String): Boolean {
-        if (!SAFE_ID.matches(configId)) return false
+        if (!WineWorkspacePolicy.isSafeEnvironmentId(configId)) return false
         return runCatching {
             val canonicalRoot = root.canonicalFile
             val workspace = File(canonicalRoot, configId).canonicalFile
@@ -107,7 +112,7 @@ class WineWorkspaceManager(context: Context) {
     }
 
     fun inspect(config: ContainerConfig): WineWorkspaceStatus {
-        if (!SAFE_ID.matches(config.id)) {
+        if (!WineWorkspacePolicy.isSafeEnvironmentId(config.id)) {
             return WineWorkspaceStatus(WineWorkspaceState.INVALID, "Identificador do ambiente inválido.")
         }
         return try {
@@ -141,7 +146,4 @@ class WineWorkspaceManager(context: Context) {
         }
     }
 
-    companion object {
-        private val SAFE_ID = Regex("^[A-Za-z0-9_-]{1,80}$")
-    }
 }
