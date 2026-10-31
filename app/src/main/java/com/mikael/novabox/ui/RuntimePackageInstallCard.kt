@@ -53,6 +53,7 @@ fun RuntimePackageInstallCard(
 
     val componentStatus = runtimeEngine.componentStatus(RuntimeId.DXVK)
     val deviceUnsupported = componentStatus.state == RuntimeComponentState.UNSUPPORTED_DEVICE
+    val packageFilesPresent = runtimeEngine.componentFilesPresent(RuntimeId.DXVK)
 
     Surface(
         color = Color(0xFF142219),
@@ -88,6 +89,13 @@ fun RuntimePackageInstallCard(
                     Text(
                         componentStatus.message,
                         color = Color(0xFFFF8585),
+                        fontSize = 10.sp,
+                        lineHeight = 15.sp
+                    )
+                } else if (packageFilesPresent) {
+                    Text(
+                        componentStatus.message,
+                        color = Color(0xFFFFD27A),
                         fontSize = 10.sp,
                         lineHeight = 15.sp
                     )
@@ -144,7 +152,7 @@ fun RuntimePackageInstallCard(
                                 }
                             }
                         },
-                        enabled = !isInstalling && !deviceUnsupported,
+                        enabled = !isInstalling && !deviceUnsupported && !packageFilesPresent,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -154,7 +162,11 @@ fun RuntimePackageInstallCard(
                             disabledContentColor = Color(0xFF8A988D)
                         )
                     ) {
-                        Text("Baixar e instalar", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            if (packageFilesPresent) "Arquivos já instalados" else "Baixar e instalar",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                     if (isInstalling) {
                         Button(
