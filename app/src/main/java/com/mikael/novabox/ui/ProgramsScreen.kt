@@ -19,10 +19,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +47,7 @@ fun ProgramsScreen(
     onImport: (ContainerConfig) -> Unit,
     onDelete: (ProgramEntry) -> Unit
 ) {
+    var pendingDelete by remember { mutableStateOf<ProgramEntry?>(null) }
     Column(
         Modifier.fillMaxSize().background(NovaBackground).statusBarsPadding().verticalScroll(rememberScrollState())
             .padding(horizontal = 17.dp, vertical = 15.dp),
@@ -115,7 +122,7 @@ fun ProgramsScreen(
                                         Icons.Default.DeleteOutline,
                                         contentDescription = "Remover programa",
                                         tint = Color(0xFFFF9A8C),
-                                        modifier = Modifier.size(20.dp).clickable { onDelete(entry) }.padding(1.dp)
+                                        modifier = Modifier.size(20.dp).clickable { pendingDelete = entry }.padding(1.dp)
                                     )
                                 }
                             }
@@ -129,6 +136,26 @@ fun ProgramsScreen(
             color = NovaMuted,
             fontSize = 9.sp,
             lineHeight = 13.sp
+        )
+    }
+
+    pendingDelete?.let { entry ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Remover programa?") },
+            text = { Text("O arquivo privado ${entry.displayName} será excluído do NovaBox.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDelete = null
+                    onDelete(entry)
+                }) { Text("Remover") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("Cancelar") }
+            },
+            containerColor = NovaPanel,
+            titleContentColor = NovaText,
+            textContentColor = NovaMuted
         )
     }
 }
