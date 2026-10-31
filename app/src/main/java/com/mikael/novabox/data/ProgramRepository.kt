@@ -39,6 +39,19 @@ object ProgramFilePolicy {
 
     fun isSafeId(value: String): Boolean =
         value.matches(Regex("^[A-Za-z0-9_-]{1,80}$"))
+
+    fun sha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                digest.update(buffer, 0, count)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }
 }
 
 class ProgramRepository(private val context: Context) {
@@ -65,7 +78,8 @@ class ProgramRepository(private val context: Context) {
                     }.getOrNull() ?: continue
                     val file = fileFor(entry)
                     if (file?.isFile == true && file.length() == entry.sizeBytes &&
-                        entry.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))
+                        entry.sha256.matches(Regex("^[a-fA-F0-9]{64}$")) &&
+                        runCatching { ProgramFilePolicy.sha256(file) == entry.sha256.lowercase() }.getOrDefault(false)
                     ) add(entry)
                 }
             }
