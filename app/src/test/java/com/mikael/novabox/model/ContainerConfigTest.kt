@@ -23,6 +23,17 @@ class ContainerConfigTest {
     }
 
     @Test
+    fun windowsAndAndroidEnvironmentsShareInternetByDefault() {
+        val windows = ContainerConfig(name = "Windows internet", osProfileId = "windows-10")
+        val android = ContainerConfig(name = "Android internet", osProfileId = "android-14")
+
+        assertEquals(NetworkMode.NAT, windows.network)
+        assertEquals(NetworkMode.NAT, android.network)
+        assertEquals(NetworkMode.DISABLED, windows.copy(network = NetworkMode.DISABLED).network)
+        assertEquals(NetworkMode.DISABLED, android.copy(network = NetworkMode.DISABLED).network)
+    }
+
+    @Test
     fun defaultWindowsProfileNeedsWineAndBox64() {
         val config = ContainerConfig(
             name = "Windows teste",
